@@ -185,7 +185,7 @@ export function CheckoutWallet({
               : 'border-zinc-700 bg-zinc-900/60 text-muted-foreground'
           }`}
         >
-          {isExtensionDetected ? 'Extension detected' : 'Extension not detected'}
+          {isExtensionDetected ? 'Extension Detected' : 'Extension Not Detected'}
         </span>
       </div>
 

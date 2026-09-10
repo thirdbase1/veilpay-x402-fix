@@ -67,7 +67,7 @@ export function PaymentIntentTable({
               onClick={onResetFilters}
               className="mt-2 text-xs font-mono text-primary hover:underline"
             >
-              Reset all filters
+              Reset All Filters
             </button>
           )}
         </div>

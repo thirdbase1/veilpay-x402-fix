@@ -38,10 +38,19 @@ function formatRelativeTime(dateString: string): string {
   try {
     const diff = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000)
     if (diff < 30) return 'Just now'
-    if (diff < 60) return `${diff} seconds ago`
-    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`
-    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`
-    if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`
+    if (diff < 60) return `${diff}s ago`
+    if (diff < 3600) {
+      const m = Math.floor(diff / 60)
+      return `${m} ${m === 1 ? 'minute' : 'minutes'} ago`
+    }
+    if (diff < 86400) {
+      const h = Math.floor(diff / 3600)
+      return `${h} ${h === 1 ? 'hour' : 'hours'} ago`
+    }
+    if (diff < 604800) {
+      const d = Math.floor(diff / 86400)
+      return `${d} ${d === 1 ? 'day' : 'days'} ago`
+    }
     return new Date(dateString).toLocaleDateString(undefined, {
       year: 'numeric',
       month: 'short',
@@ -200,7 +209,7 @@ export default function MerchantActivityPage() {
         <DashboardHeader
           title="Activity & Audit Log"
           description="Authoritative timeline of payment intent creation, verification, and settlement events."
-          action={{ href: '/app/create', label: 'Create payment' }}
+          action={{ href: '/app/create', label: 'Create Payment' }}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">
           {/* Top Banner / Controls */}
@@ -228,7 +237,7 @@ export default function MerchantActivityPage() {
               ) : (
                 <CheckCheck className="size-3.5 text-primary" />
               )}
-              <span>Mark all read</span>
+              <span>Mark All Read</span>
             </button>
           )}
 
@@ -310,7 +319,7 @@ export default function MerchantActivityPage() {
                 className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-sm"
               >
                 <PlusCircle className="size-3.5" />
-                <span>Create first payment intent</span>
+                <span>Create First Payment Intent</span>
               </Link>
             </div>
           </div>

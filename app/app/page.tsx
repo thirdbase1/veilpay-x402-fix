@@ -90,7 +90,7 @@ export default function MerchantOverviewPage() {
       <DashboardHeader
         title="Overview"
         description="Create, monitor, and manage privacy-preserving payment intents."
-        action={{ href: '/app/create', label: 'Create payment' }}
+        action={{ href: '/app/create', label: 'Create Payment' }}
       />
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">
@@ -184,7 +184,7 @@ export default function MerchantOverviewPage() {
                 href="/app/intents"
                 className="inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-background/80 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition"
               >
-                <span>View all intents</span>
+                <span>View All Intents</span>
                 <ArrowRight className="size-3.5" />
               </Link>
             </div>
@@ -219,7 +219,7 @@ export default function MerchantOverviewPage() {
                 {(
                   [
                     { id: 'all', label: 'All' },
-                    { id: 'awaiting_payment', label: 'Awaiting' },
+                    { id: 'awaiting_payment', label: 'Awaiting Payment' },
                     { id: 'verified', label: 'Verified' },
                     { id: 'expired', label: 'Expired' },
                   ] as const

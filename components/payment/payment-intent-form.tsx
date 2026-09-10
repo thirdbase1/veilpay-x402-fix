@@ -140,7 +140,7 @@ export function PaymentIntentForm() {
           {/* Predicate */}
           <div>
             <label htmlFor={kindId} className="block text-xs font-medium text-foreground mb-1.5">
-              Requirement type
+              Requirement Type
             </label>
             <select
               id={kindId}
@@ -159,7 +159,7 @@ export function PaymentIntentForm() {
           {/* Amount */}
           <div>
             <label htmlFor={amountId} className="block text-xs font-medium text-foreground mb-1.5">
-              {kind === 'range' ? 'Minimum amount' : 'Required amount'}
+              {kind === 'range' ? 'Minimum Amount' : 'Required Amount'}
             </label>
             <input
               id={amountId}
@@ -180,7 +180,7 @@ export function PaymentIntentForm() {
           {/* Asset */}
           <div>
             <label htmlFor={assetId} className="block text-xs font-medium text-foreground mb-1.5">
-              Asset token
+              Asset Token
             </label>
             <select
               id={assetId}
@@ -201,7 +201,7 @@ export function PaymentIntentForm() {
         {kind === 'range' && (
           <div className="max-w-xs pt-1">
             <label htmlFor={amountMaxId} className="block text-xs font-medium text-foreground mb-1.5">
-              Maximum amount ({asset})
+              Maximum Amount ({asset})
             </label>
             <input
               id={amountMaxId}
@@ -247,7 +247,7 @@ export function PaymentIntentForm() {
 
         <div>
           <label htmlFor={recipientId} className="sr-only">
-            Recipient address
+            Recipient Address
           </label>
           <input
             id={recipientId}
@@ -266,6 +266,110 @@ export function PaymentIntentForm() {
               Must be your valid Midnight account identity. Payer will satisfy payment to this address.
             </p>
           )}
+        </div>
+      </div>
+
+      {/* SECTION 3: Expiration & Metadata */}
+      <div className="rounded-2xl border border-border/70 bg-card/40 p-6 backdrop-blur-sm space-y-5">
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">
+            3. Expiration & Metadata
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Configure intent lifetime and merchant reconciliation reference.
+          </p>
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          {/* Expiration */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label htmlFor={expiryId} className="text-xs font-medium text-foreground">
+                Expiration (Optional)
+              </label>
+              <div className="flex items-center gap-1.5 font-mono text-[10px]">
+                <button
+                  type="button"
+                  onClick={() => setExpiryPreset(1)}
+                  className="rounded border border-border px-1.5 py-0.5 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                >
+                  +1h
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExpiryPreset(24)}
+                  className="rounded border border-border px-1.5 py-0.5 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                >
+                  +24h
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExpiryPreset(168)}
+                  className="rounded border border-border px-1.5 py-0.5 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                >
+                  +7d
+                </button>
+              </div>
+            </div>
+
+            <div className="relative">
+              <input
+                id={expiryId}
+                type="datetime-local"
+                value={expiresAt}
+                onChange={(e) => setExpiresAt(e.target.value)}
+                className={`w-full rounded-lg border bg-background px-3 py-2 text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                  getFieldError('expiresAt') ? 'border-rose-500/80 ring-1 ring-rose-500/50' : 'border-border'
+                }`}
+              />
+              <Calendar className="absolute right-3 top-2.5 size-4 text-muted-foreground pointer-events-none" />
+            </div>
+            {getFieldError('expiresAt') ? (
+              <p className="mt-1 text-[11px] text-rose-400">{getFieldError('expiresAt')}</p>
+            ) : (
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                After expiration, the intent will reject late proofs and transition to expired.
+              </p>
+            )}
+          </div>
+
+          {/* Reference / Memo */}
+          <div>
+            <label htmlFor={referenceId} className="block text-xs font-medium text-foreground mb-1.5">
+              Merchant Reference (Optional)
+            </label>
+            <input
+              id={referenceId}
+              type="text"
+              placeholder="e.g. Order #4102 or Invoice 2026-08"
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Internal correlation handle. Stored as metadata, not payer identity.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 4: Privacy Architecture Notice */}
+      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-start gap-3">
+        <ShieldCheck className="size-5 text-primary shrink-0 mt-0.5" />
+        <div className="text-xs leading-relaxed text-muted-foreground">
+          <p className="font-semibold text-foreground">VeilPay Privacy Guarantee</p>
+          <p className="mt-0.5">
+            VeilPay is designed to show merchants only the payment information required to verify this intent.
+            The customer&apos;s wallet balance, address history, and broader activity remain undisclosed.
+          </p>
+        </div>
+      </div>
+
+      {/* Form Submission Actions */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <HelpCircle className="size-3.5" />
+          <span>Intent will be registered with status <strong className="text-cyan-300 font-medium">Awaiting Payment</strong></span>
         </div>
       </div>
 

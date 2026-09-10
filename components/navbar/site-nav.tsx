@@ -105,7 +105,7 @@ export function SiteNav() {
                 href="/auth/login"
                 className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
               >
-                Sign in
+                Sign In
               </Link>
               <Link
                 href="/auth/signup"
@@ -179,7 +179,7 @@ export function SiteNav() {
                   onClick={() => setOpen(false)}
                   className="inline-flex items-center justify-center rounded-md border border-border px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
                 >
-                  Sign in
+                  Sign In
                 </Link>
                 <Link
                   href="/auth/signup"

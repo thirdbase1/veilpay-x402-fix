@@ -564,8 +564,8 @@ console.log('Current status:', status)`
                       }
                       className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
                     >
-                      <option value="exactly">Exactly (kind: &apos;exactly&apos;)</option>
-                      <option value="at_least">At least (kind: &apos;at_least&apos;)</option>
+                      <option value="exactly">Exact Amount (kind: &apos;exactly&apos;)</option>
+                      <option value="at_least">Minimum Threshold (kind: &apos;at_least&apos;)</option>
                       <option value="range">Price Range (kind: &apos;range&apos;)</option>
                     </select>
                   </div>

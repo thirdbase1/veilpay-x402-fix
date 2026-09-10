@@ -5,10 +5,10 @@ import { Reveal } from '@/components/site/reveal'
 import { routes } from '@/lib/config'
 
 const flow = [
-  { icon: Link2, label: 'Create intent', body: 'Define the required conditions.' },
-  { icon: QrCode, label: 'Share link / QR', body: 'Hand the customer a payment target.' },
-  { icon: Clock, label: 'Wait for verification', body: 'The protocol checks the conditions.' },
-  { icon: BadgeCheck, label: 'Receive verified status', body: 'Reconcile against your reference.' },
+  { icon: Link2, label: 'Create Intent', body: 'Define the required conditions.' },
+  { icon: QrCode, label: 'Share Link or QR', body: 'Hand the customer a payment target.' },
+  { icon: Clock, label: 'Wait for Verification', body: 'The protocol checks the conditions.' },
+  { icon: BadgeCheck, label: 'Receive Verified Status', body: 'Reconcile against your reference.' },
 ]
 
 export function MerchantSection() {
@@ -17,7 +17,7 @@ export function MerchantSection() {
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-16">
         <div>
           <Reveal>
-            <SectionEyebrow>For merchants</SectionEyebrow>
+            <SectionEyebrow>For Merchants</SectionEyebrow>
             <SectionHeading>A payment flow merchants can actually use.</SectionHeading>
           </Reveal>
           <Reveal delay={80}>

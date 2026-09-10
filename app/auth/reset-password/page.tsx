@@ -52,10 +52,10 @@ export default function ResetPasswordPage() {
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2"
         >
           <ArrowLeft className="size-3.5" />
-          <span>Back to sign in</span>
+          <span>Back to Sign In</span>
         </Link>
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-          Reset password
+          Reset Password
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground">
           Enter your registered merchant email to receive a password reset link.
@@ -67,7 +67,7 @@ export default function ResetPasswordPage() {
           <div className="mx-auto flex size-8 items-center justify-center rounded-full bg-primary/20 text-primary">
             <CheckCircle2 className="size-4" />
           </div>
-          <p className="text-xs text-foreground font-medium">Check your inbox</p>
+          <p className="text-xs text-foreground font-medium">Check Your Inbox</p>
           <p className="text-xs text-muted-foreground leading-relaxed">
             If an account exists for <span className="font-mono text-foreground">{email}</span>, we have sent instructions to reset your password.
           </p>
@@ -115,7 +115,7 @@ export default function ResetPasswordPage() {
               {isPending ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  <span>Sending reset link...</span>
+                  <span>Sending Reset Link...</span>
                 </>
               ) : (
                 <span>Send Reset Link</span>

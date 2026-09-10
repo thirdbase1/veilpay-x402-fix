@@ -38,6 +38,13 @@ export function PaymentRequirements({ intent }: PaymentRequirementsProps) {
       })
     : 'None (Does not expire)'
 
+  const predicateLabel =
+    conditions.amount.kind === 'exactly'
+      ? 'Exact Amount'
+      : conditions.amount.kind === 'at_least'
+      ? 'Minimum Threshold'
+      : 'Between Range'
+
   // Format recipient for privacy-conscious display (e.g. mn_addr...8f2a)
   const recipient = conditions.recipient
   const shortRecipient =
@@ -57,7 +64,7 @@ export function PaymentRequirements({ intent }: PaymentRequirementsProps) {
       <div className="flex items-center justify-between border-b border-border/60 pb-4">
         <div>
           <h2 className="text-sm font-semibold text-foreground">
-            Payment requirements
+            Payment Requirements
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             Verified conditions the customer must satisfy to complete this intent.
@@ -82,7 +89,7 @@ export function PaymentRequirements({ intent }: PaymentRequirementsProps) {
             <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
               <span>Asset: <strong className="font-mono text-foreground">{conditions.amount.asset}</strong></span>
               <span>•</span>
-              <span>Predicate: <strong className="font-mono text-foreground">{conditions.amount.kind}</strong></span>
+              <span>Predicate: <strong className="font-medium text-foreground">{predicateLabel}</strong></span>
             </div>
           </div>
         </div>
@@ -107,7 +114,7 @@ export function PaymentRequirements({ intent }: PaymentRequirementsProps) {
               ) : (
                 <>
                   <Copy className="size-3" />
-                  <span className="font-mono">Copy full</span>
+                  <span className="font-mono">Copy Full Address</span>
                 </>
               )}
             </button>

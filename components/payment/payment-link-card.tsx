@@ -19,6 +19,16 @@ interface PaymentLinkCardProps {
   reference?: string
 }
 
+const statusDisplay: Record<PaymentIntentStatus, string> = {
+  draft: 'Draft',
+  awaiting_payment: 'Awaiting Payment',
+  verifying: 'Verifying',
+  verified: 'Verified',
+  expired: 'Expired',
+  failed: 'Failed',
+  cancelled: 'Cancelled',
+}
+
 export function PaymentLinkCard({
   intentId,
   status,
@@ -50,7 +60,6 @@ export function PaymentLinkCard({
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // Fallback
       setCopied(false)
     }
   }
@@ -73,7 +82,7 @@ export function PaymentLinkCard({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/60 pb-4">
         <div>
           <h2 className="text-sm font-semibold text-foreground">
-            Customer payment
+            Customer Payment Link
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             Share this link with the customer to complete the payment.
@@ -98,7 +107,7 @@ export function PaymentLinkCard({
         <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-3 flex items-center gap-2 text-xs text-amber-300">
           <AlertCircle className="size-4 shrink-0 text-amber-400" />
           <span>
-            This payment intent is inactive ({status}). Checkout will reject submissions.
+            This payment intent is inactive ({statusDisplay[status] || status}). Checkout will reject submissions.
           </span>
         </div>
       )}
@@ -125,7 +134,7 @@ export function PaymentLinkCard({
             ) : (
               <>
                 <Copy className="size-3.5" />
-                <span>Copy link</span>
+                <span>Copy Link</span>
               </>
             )}
           </button>
@@ -140,7 +149,7 @@ export function PaymentLinkCard({
                 : 'bg-primary text-primary-foreground hover:bg-primary/90'
             }`}
           >
-            <span>Open checkout</span>
+            <span>Open Checkout</span>
             <ExternalLink className="size-3.5" />
           </Link>
 
@@ -151,7 +160,7 @@ export function PaymentLinkCard({
               className="col-span-2 sm:col-span-1 inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-medium text-foreground hover:bg-muted/40 transition-colors"
             >
               <Share2 className="size-3.5" />
-              <span>Share</span>
+              <span>Share Link</span>
             </button>
           )}
         </div>

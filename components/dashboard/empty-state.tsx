@@ -21,7 +21,7 @@ export function EmptyState() {
         className="mt-6 inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <PlusCircle className="size-3.5" />
-        Create payment
+        Create Payment
       </Link>
     </div>
   )

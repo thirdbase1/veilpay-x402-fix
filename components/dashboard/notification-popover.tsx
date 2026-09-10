@@ -193,7 +193,7 @@ export function NotificationPopover() {
                 ) : (
                   <CheckCheck className="size-3" />
                 )}
-                <span>Mark all read</span>
+                <span>Mark All Read</span>
               </button>
             )}
           </div>
@@ -207,61 +207,37 @@ export function NotificationPopover() {
               </div>
             ) : notifications.length === 0 ? (
               <div className="py-8 px-4 text-center">
-                <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-muted/40 text-muted-foreground mb-2">
-                  <Bell className="size-5" />
-                </div>
-                <p className="text-xs font-medium text-foreground">No activity notifications</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Real payment-intent events will appear here.
-                </p>
+                <p className="text-xs text-muted-foreground">No recent notifications</p>
               </div>
             ) : (
               notifications.map((item) => (
                 <div
                   key={item.id}
-                  className={`group relative flex items-start gap-3 p-3 transition hover:bg-muted/40 ${
+                  onClick={(e) => handleMarkOneRead(item.id, e)}
+                  className={`flex items-start gap-3 p-3 transition hover:bg-muted/40 cursor-pointer ${
                     !item.isRead ? 'bg-primary/5' : ''
                   }`}
                 >
                   <div className="mt-0.5">{getEventIcon(item.eventType)}</div>
-
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1">
-                      <p className="text-xs font-semibold text-foreground truncate">
+                      <p className="text-xs font-medium text-foreground truncate">
                         {item.title}
                       </p>
-                      <span className="text-[10px] font-mono text-muted-foreground shrink-0">
+                      <span className="text-[10px] text-muted-foreground font-mono shrink-0">
                         {formatRelativeTime(item.createdAt)}
                       </span>
                     </div>
-
-                    <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
+                    <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">
                       {item.description}
                     </p>
-
                     {item.intentId && (
-                      <div className="mt-1.5 flex items-center gap-2">
-                        <Link
-                          href={`/app/intents/${item.intentId}`}
-                          onClick={() => setIsOpen(false)}
-                          className="inline-flex items-center gap-1 font-mono text-[10px] text-primary hover:underline"
-                        >
-                          <span>{item.intentId.slice(0, 16)}...</span>
-                          <ArrowRight className="size-2.5" />
-                        </Link>
+                      <div className="mt-1.5 flex items-center gap-1 font-mono text-[10px] text-primary">
+                        <span>{item.intentId.slice(0, 16)}...</span>
+                        <ArrowRight className="size-2.5" />
                       </div>
                     )}
                   </div>
-
-                  {!item.isRead && (
-                    <button
-                      type="button"
-                      onClick={(e) => handleMarkOneRead(item.id, e)}
-                      title="Mark as read"
-                      aria-label="Mark as read"
-                      className="mt-1 size-2 rounded-full bg-primary ring-2 ring-primary/20 shrink-0 hover:scale-125 transition-transform"
-                    />
-                  )}
                 </div>
               ))
             )}
@@ -274,7 +250,7 @@ export function NotificationPopover() {
               onClick={() => setIsOpen(false)}
               className="inline-flex items-center justify-center gap-1.5 text-xs font-medium text-primary hover:text-primary/90 transition"
             >
-              <span>View full activity log</span>
+              <span>View Full Activity Log</span>
               <ArrowRight className="size-3" />
             </Link>
           </div>

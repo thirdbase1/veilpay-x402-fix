@@ -540,7 +540,7 @@ export default function DocsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="rounded-full border border-border bg-muted/60 px-2.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-                      No Wallet Req.
+                      No Wallet Required
                     </span>
                     <span className="rounded-full border border-border bg-muted/60 px-2.5 py-0.5 text-[10px] font-mono text-muted-foreground">
                       Read-Only
@@ -581,7 +581,7 @@ export default function DocsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="rounded-full border border-border bg-muted/60 px-2.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-                      No Wallet Req.
+                      No Wallet Required
                     </span>
                     <span className="rounded-full border border-border bg-muted/60 px-2.5 py-0.5 text-[10px] font-mono text-muted-foreground">
                       Read-Only
@@ -622,7 +622,7 @@ export default function DocsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="rounded-full border border-border bg-muted/60 px-2.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-                      No Wallet Req.
+                      No Wallet Required
                     </span>
                     <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[10px] font-mono text-primary">
                       Creates State / Tx

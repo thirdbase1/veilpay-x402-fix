@@ -5,7 +5,7 @@ import { routes, siteConfig } from '@/lib/config'
 
 const productLinks = [
   { label: 'Product', href: '/#product' },
-  { label: 'How it works', href: '/#how-it-works' },
+  { label: 'How It Works', href: '/#how-it-works' },
   { label: 'Privacy', href: '/#privacy' },
   { label: 'Developers', href: '/#developers' },
 ]

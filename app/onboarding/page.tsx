@@ -169,9 +169,9 @@ export default function OnboardingPage() {
                   <div className="space-y-1.5">
                     <label
                       htmlFor="biz-name"
-                      className="block text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                      className="block text-xs font-semibold text-foreground tracking-tight"
                     >
-                      Business / Merchant Name <span className="text-primary">*</span>
+                      Business or Merchant Name <span className="text-primary">*</span>
                     </label>
                     <div className="relative">
                       <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/60 pointer-events-none" />
@@ -190,9 +190,9 @@ export default function OnboardingPage() {
                   <div className="space-y-1.5">
                     <label
                       htmlFor="biz-website"
-                      className="block text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                      className="block text-xs font-semibold text-foreground tracking-tight"
                     >
-                      Website or Store URL <span className="text-muted-foreground/60">(Optional)</span>
+                      Website or Store URL <span className="text-muted-foreground font-normal">(Optional)</span>
                     </label>
                     <input
                       id="biz-website"
@@ -207,9 +207,9 @@ export default function OnboardingPage() {
                   <div className="space-y-1.5">
                     <label
                       htmlFor="biz-desc"
-                      className="block text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                      className="block text-xs font-semibold text-foreground tracking-tight"
                     >
-                      Short Description / Industry <span className="text-muted-foreground/60">(Optional)</span>
+                      Short Description or Industry <span className="text-muted-foreground font-normal">(Optional)</span>
                     </label>
                     <input
                       id="biz-desc"
@@ -254,7 +254,7 @@ export default function OnboardingPage() {
                   <div className="space-y-1.5">
                     <label
                       htmlFor="rec-addr"
-                      className="block text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                      className="block text-xs font-semibold text-foreground tracking-tight"
                     >
                       Default Midnight Recipient Address
                     </label>
@@ -320,7 +320,7 @@ export default function OnboardingPage() {
 
                 <div className="space-y-4 pt-2">
                   <div className="space-y-2">
-                    <span className="block text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <span className="block text-xs font-semibold text-foreground tracking-tight">
                       Privacy Disclosure Preset
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -373,7 +373,7 @@ export default function OnboardingPage() {
                   <div className="space-y-1.5">
                     <label
                       htmlFor="exp-hours"
-                      className="block text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                      className="block text-xs font-semibold text-foreground tracking-tight"
                     >
                       Default Intent Expiration
                     </label>

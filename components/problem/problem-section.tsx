@@ -41,8 +41,8 @@ export function ProblemSection() {
           <Reveal delay={200}>
             <p className="mt-6 text-pretty leading-relaxed text-muted-foreground">
               Yet merchants often need only a simple answer:{' '}
-              <span className="text-foreground">
-                did this payment satisfy my requirements?
+              <span className="text-foreground font-medium">
+                &ldquo;Did this payment satisfy my requirements?&rdquo;
               </span>{' '}
               VeilPay is designed around that distinction.
             </p>
@@ -59,8 +59,8 @@ export function ProblemSection() {
                 steps={[
                   { label: 'Payment', tone: 'neutral' },
                   { label: 'Address', tone: 'muted' },
-                  { label: 'Transaction history', tone: 'muted' },
-                  { label: 'Wallet activity', tone: 'muted' },
+                  { label: 'Transaction History', tone: 'muted' },
+                  { label: 'Wallet Activity', tone: 'muted' },
                   { label: 'Merchant', tone: 'neutral' },
                 ]}
               />
@@ -78,8 +78,8 @@ export function ProblemSection() {
               <Pipeline
                 steps={[
                   { label: 'Payment', tone: 'neutral' },
-                  { label: 'Privacy-preserving verification', tone: 'primary' },
-                  { label: 'Required result', tone: 'accent' },
+                  { label: 'Privacy-Preserving Verification', tone: 'primary' },
+                  { label: 'Required Result', tone: 'accent' },
                   { label: 'Merchant', tone: 'neutral' },
                 ]}
               />

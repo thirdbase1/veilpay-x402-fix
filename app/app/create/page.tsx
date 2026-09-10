@@ -12,7 +12,7 @@ export default function CreatePaymentIntentPage() {
       <DashboardHeader
         title="Create Payment Intent"
         description="Define conditions for a privacy-preserving payment on Midnight."
-        action={{ href: '/app', label: 'View all intents' }}
+        action={null}
       />
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">
@@ -22,7 +22,7 @@ export default function CreatePaymentIntentPage() {
             className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="size-3.5" />
-            Back to overview
+            Back to Overview
           </Link>
 
           <div className="flex items-center gap-2">

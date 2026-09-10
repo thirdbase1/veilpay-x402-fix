@@ -28,14 +28,14 @@ const stages: Stage[] = [
   },
   {
     key: 'private',
-    title: 'Private payment',
+    title: 'Private Payment',
     detail: 'Payment details are sealed to the payer.',
     icon: Lock,
     tone: 'private',
   },
   {
     key: 'zk',
-    title: 'ZK verification',
+    title: 'ZK Verification',
     detail: 'Conditions are checked without revealing the details.',
     icon: Boxes,
     tone: 'verify',

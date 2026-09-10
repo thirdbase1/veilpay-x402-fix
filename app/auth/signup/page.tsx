@@ -93,7 +93,7 @@ export default function SignUpPage() {
             href="/auth/login"
             className="text-xs text-primary hover:underline font-medium"
           >
-            Return to sign in
+            Return to Sign In
           </Link>
         </div>
       </div>
@@ -200,7 +200,7 @@ export default function SignUpPage() {
           {isPending ? (
             <>
               <Loader2 className="size-4 animate-spin" />
-              <span>Creating account...</span>
+              <span>Creating Account...</span>
             </>
           ) : (
             <>
@@ -218,7 +218,7 @@ export default function SignUpPage() {
             href="/auth/login"
             className="font-medium text-primary hover:underline transition-all"
           >
-            Sign in
+            Sign In
           </Link>
         </p>
       </div>

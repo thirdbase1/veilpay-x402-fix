@@ -53,7 +53,7 @@ export function PaymentIntentRowActions({
         ) : (
           <>
             <Copy className="size-3" />
-            {!compact && <span className="hidden sm:inline">Copy link</span>}
+            {!compact && <span className="hidden sm:inline">Copy Link</span>}
           </>
         )}
       </button>

@@ -7,19 +7,19 @@ const cards = [
   {
     icon: Eye,
     tone: 'primary' as const,
-    title: 'What the merchant needs',
+    title: 'What the Merchant Needs',
     items: ['Payment intent status', 'Required payment conditions', 'Verification result'],
   },
   {
     icon: EyeOff,
     tone: 'muted' as const,
-    title: 'What should stay private',
+    title: 'What Stays Private',
     items: ['Unnecessary wallet history', 'Unnecessary balances', 'Unnecessary payer information'],
   },
   {
     icon: ShieldCheck,
     tone: 'accent' as const,
-    title: 'What VeilPay proves',
+    title: 'What VeilPay Proves',
     items: ['That the payment satisfies the defined conditions.'],
   },
 ]
@@ -41,7 +41,7 @@ export function PrivacySection() {
     <Section>
       <div className="max-w-3xl">
         <Reveal>
-          <SectionEyebrow>Privacy model</SectionEyebrow>
+          <SectionEyebrow>Privacy Model</SectionEyebrow>
           <SectionHeading>Privacy isn&apos;t a feature. It&apos;s the architecture.</SectionHeading>
         </Reveal>
         <Reveal delay={80}>

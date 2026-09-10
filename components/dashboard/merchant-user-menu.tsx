@@ -107,7 +107,7 @@ export function MerchantUserMenu({ initialBusinessName }: MerchantUserMenuProps)
               ) : (
                 <LogOut className="size-3.5" />
               )}
-              <span>{isSigningOut ? 'Signing out...' : 'Sign out'}</span>
+              <span>{isSigningOut ? 'Signing Out...' : 'Sign Out'}</span>
             </button>
           </div>
         </div>

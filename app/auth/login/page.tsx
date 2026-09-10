@@ -159,7 +159,7 @@ function LoginForm() {
             </>
           ) : (
             <>
-              <span>Sign in to Dashboard</span>
+              <span>Sign In to Dashboard</span>
               <ArrowRight className="size-4" />
             </>
           )}
@@ -202,7 +202,7 @@ function LoginForm() {
             href="/auth/signup"
             className="font-medium text-primary hover:underline transition-all"
           >
-            Create merchant account
+            Create Merchant Account
           </Link>
         </p>
       </div>

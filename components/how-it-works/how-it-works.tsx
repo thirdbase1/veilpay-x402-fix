@@ -6,25 +6,25 @@ const steps = [
   {
     num: '01',
     icon: FileText,
-    title: 'Merchant creates an intent',
+    title: 'Merchant Creates an Intent',
     body: 'The merchant specifies the payment requirements — such as a required amount, recipient, expiration, or other verifiable conditions.',
   },
   {
     num: '02',
     icon: Wallet,
-    title: 'Customer pays privately',
+    title: 'Customer Pays Privately',
     body: 'The customer connects their supported wallet and completes the payment. Private information stays protected wherever the protocol permits.',
   },
   {
     num: '03',
     icon: ScanLine,
-    title: 'VeilPay verifies',
+    title: 'VeilPay Verifies Cryptographically',
     body: 'The protocol uses cryptographic (zero-knowledge) verification to check that the payment satisfies the payment intent.',
   },
   {
     num: '04',
     icon: BadgeCheck,
-    title: 'Merchant receives proof',
+    title: 'Merchant Receives Proof',
     body: 'The merchant gets the information they actually need — payment verified — without unnecessary access to the customer\u2019s broader financial history.',
   },
 ]
@@ -33,7 +33,7 @@ export function HowItWorks() {
   return (
     <Section id="how-it-works">
       <Reveal>
-        <SectionEyebrow>How it works</SectionEyebrow>
+        <SectionEyebrow>How It Works</SectionEyebrow>
         <SectionHeading>From payment intent to verified payment.</SectionHeading>
       </Reveal>
 

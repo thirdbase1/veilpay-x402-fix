@@ -77,7 +77,7 @@ export function WalletButton() {
                 className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-rose-400 transition hover:bg-rose-950/20"
               >
                 <LogOut className="size-3.5" />
-                Disconnect wallet
+                Disconnect Wallet
               </button>
             </div>
           </div>
@@ -94,7 +94,7 @@ export function WalletButton() {
         className="inline-flex h-9 items-center gap-1.5 sm:gap-2 rounded-lg border border-border bg-secondary/60 px-2.5 sm:px-3.5 text-xs font-medium text-foreground transition hover:border-border/80 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Wallet className="size-3.5 text-muted-foreground shrink-0" />
-        <span className="hidden sm:inline">Connect wallet</span>
+        <span className="hidden sm:inline">Connect Wallet</span>
         <span className="sm:hidden">Wallet</span>
       </button>
 

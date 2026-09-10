@@ -23,7 +23,7 @@ export function IntentNotFound({ id, error }: IntentNotFoundProps) {
       >
         <div className="flex items-center gap-2.5 text-base font-semibold text-rose-300">
           <AlertTriangle className="size-5 text-rose-400" />
-          <span>Payment intent not found</span>
+          <span>Payment Intent Not Found</span>
         </div>
         <p className="text-xs text-rose-300/90 leading-relaxed">
           {error || "We couldn't find a payment intent with this identifier."}

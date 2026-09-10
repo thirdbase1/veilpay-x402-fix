@@ -97,7 +97,7 @@ export function PaymentQR({
       <div className="flex items-center gap-2">
         <span className="font-mono text-[11px] text-muted-foreground flex items-center gap-1">
           <QrIcon className="size-3 text-primary" />
-          Scan to pay
+          Scan to Pay
         </span>
         <span className="text-muted-foreground/40">•</span>
         <button

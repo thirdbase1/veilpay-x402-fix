@@ -13,18 +13,20 @@ interface DashboardHeaderProps {
   action?: {
     href: string
     label: string
-  }
+  } | null
   onOpenMobileMenu?: () => void
 }
 
 export function DashboardHeader({
   title,
   description = 'Create and monitor privacy-preserving payment intents.',
-  action = { href: '/app/create', label: 'Create payment' },
+  action = { href: '/app/create', label: 'Create Payment' },
   onOpenMobileMenu,
 }: DashboardHeaderProps) {
   const { openMobileMenu } = useDashboardNav()
   const handleOpen = onOpenMobileMenu || openMobileMenu
+
+  const shortActionLabel = action?.label?.split(' ')[0] || 'Create'
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/70 bg-background/80 px-4 sm:px-8 backdrop-blur-xl gap-2">
@@ -39,7 +41,7 @@ export function DashboardHeader({
         </button>
 
         <div className="min-w-0">
-          <h1 className="text-sm sm:text-base font-semibold tracking-tight text-foreground truncate">
+          <h1 className="text-xs sm:text-base font-semibold tracking-tight text-foreground truncate">
             {title}
           </h1>
           {description && (
@@ -63,8 +65,8 @@ export function DashboardHeader({
             className="inline-flex h-9 items-center gap-1.5 sm:gap-2 rounded-lg bg-primary px-3 sm:px-3.5 text-xs font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <PlusCircle className="size-3.5" />
-            <span className="hidden xs:inline sm:inline">{action.label}</span>
-            <span className="xs:hidden sm:hidden inline">Create</span>
+            <span className="hidden sm:inline">{action.label}</span>
+            <span className="sm:hidden">{shortActionLabel}</span>
           </Link>
         )}
       </div>

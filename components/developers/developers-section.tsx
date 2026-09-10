@@ -11,7 +11,7 @@ export function DevelopersSection() {
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16">
         <div>
           <Reveal>
-            <SectionEyebrow>For developers</SectionEyebrow>
+            <SectionEyebrow>For Developers</SectionEyebrow>
             <SectionHeading>Build private payment experiences on top of VeilPay.</SectionHeading>
           </Reveal>
           <Reveal delay={80}>
@@ -35,13 +35,13 @@ export function DevelopersSection() {
         <Reveal delay={120}>
           <div className="rounded-2xl border border-border/60 bg-card/40 p-6">
             <p className="mb-4 font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              Conceptual integration
+              Conceptual Integration
             </p>
             <Pipeline
               className="sm:flex-col sm:items-stretch"
               steps={[
-                { label: 'Merchant application', tone: 'neutral' },
-                { label: 'VeilPay payment intent', tone: 'primary' },
+                { label: 'Merchant Application', tone: 'neutral' },
+                { label: 'VeilPay Payment Intent', tone: 'primary' },
                 { label: 'Midnight', tone: 'primary' },
                 { label: 'Verification', tone: 'accent' },
               ]}

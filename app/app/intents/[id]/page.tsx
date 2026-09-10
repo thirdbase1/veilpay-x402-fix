@@ -148,7 +148,7 @@ export default function PaymentIntentDetailPage({ params }: PageProps) {
       <DashboardHeader
         title="Intent Control Center"
         description="Verify cryptographic condition requirements and monitor zero-knowledge proof settlement."
-        action={{ href: '/app/create', label: 'Create new intent' }}
+        action={{ href: '/app/create', label: 'Create Payment Intent' }}
       />
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 max-w-6xl w-full mx-auto">

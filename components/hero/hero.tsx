@@ -47,7 +47,7 @@ export function Hero() {
                 href={routes.app}
                 className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
-                Create a payment
+                Create a Payment
                 <ArrowRight className="size-4" />
               </Link>
               <Link
@@ -55,7 +55,7 @@ export function Hero() {
                 className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-card/40 px-5 py-3 text-sm font-medium text-foreground backdrop-blur-sm transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <BookOpen className="size-4" />
-                Explore the protocol
+                Explore the Protocol
               </Link>
             </div>
           </Reveal>

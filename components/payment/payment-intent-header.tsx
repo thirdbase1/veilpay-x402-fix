@@ -139,7 +139,7 @@ export function PaymentIntentHeader({
               className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-950/10 px-2.5 text-xs font-medium text-rose-400 hover:bg-rose-950/30 transition-colors"
             >
               <Ban className="size-3.5" />
-              <span>Cancel intent</span>
+              <span>Cancel Intent</span>
             </button>
           )}
 

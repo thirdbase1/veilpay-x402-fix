@@ -48,7 +48,7 @@ export function PaymentLinkPanel({ intentId, origin = '' }: PaymentLinkPanelProp
           }`}
         >
           <QrCode className="size-3.5" />
-          {showQR ? 'Hide QR' : 'Show QR code'}
+          {showQR ? 'Hide QR' : 'Show QR'}
         </button>
       </div>
 
@@ -72,7 +72,7 @@ export function PaymentLinkPanel({ intentId, origin = '' }: PaymentLinkPanelProp
             ) : (
               <>
                 <Copy className="size-3.5" />
-                <span>Copy link</span>
+                <span>Copy Link</span>
               </>
             )}
           </button>
@@ -83,7 +83,7 @@ export function PaymentLinkPanel({ intentId, origin = '' }: PaymentLinkPanelProp
             rel="noopener noreferrer"
             className="flex-1 sm:flex-initial inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <span>Open checkout</span>
+            <span>Open Checkout</span>
             <ExternalLink className="size-3.5" />
           </Link>
         </div>

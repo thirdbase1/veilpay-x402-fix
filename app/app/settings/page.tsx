@@ -23,7 +23,7 @@ export default function MerchantSettingsPage() {
       <DashboardHeader
         title="Settings & Network Configuration"
         description="Review protocol integration status, wallet connections, and environment parameters."
-        action={{ href: '/app/create', label: 'Create payment' }}
+        action={{ href: '/app/create', label: 'Create Payment' }}
       />
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 max-w-4xl">

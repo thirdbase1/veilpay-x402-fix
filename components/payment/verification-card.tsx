@@ -77,7 +77,7 @@ export function VerificationCard({ intent }: VerificationCardProps) {
       <div className="flex items-center justify-between border-b border-border/60 pb-4">
         <div>
           <h2 className="text-sm font-semibold text-foreground">
-            Verification
+            Verification Status
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             Cryptographic proof lifecycle evaluated against intent conditions.
@@ -93,14 +93,14 @@ export function VerificationCard({ intent }: VerificationCardProps) {
         <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/20 p-4 space-y-2 text-emerald-300">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="size-4 text-emerald-400" />
-            <span className="text-xs font-semibold">Payment verified</span>
+            <span className="text-xs font-semibold">Payment Verified</span>
           </div>
           <p className="text-xs text-emerald-200/90 leading-relaxed">
             The payment satisfied the requirements defined by this intent. The merchant receives verified proof without exposing the customer&apos;s broader financial history.
           </p>
           {onChainReference && (
             <div className="pt-1 flex items-center justify-between text-[11px] font-mono border-t border-emerald-500/20">
-              <span className="text-emerald-400">Proof reference:</span>
+              <span className="text-emerald-400">Proof Reference:</span>
               <div className="flex items-center gap-1.5">
                 <code className="text-emerald-200 truncate max-w-[200px]">{onChainReference}</code>
                 <button
@@ -127,7 +127,7 @@ export function VerificationCard({ intent }: VerificationCardProps) {
         <div className="rounded-xl border border-cyan-500/40 bg-cyan-950/20 p-4 space-y-2 text-cyan-200">
           <div className="flex items-center gap-2">
             <RefreshCw className="size-4 animate-spin motion-reduce:animate-none text-cyan-400" />
-            <span className="text-xs font-semibold">Verifying payment</span>
+            <span className="text-xs font-semibold">Verifying Payment</span>
           </div>
           <p className="text-xs text-cyan-200/90 leading-relaxed">
             Payment transaction detected on Midnight. Zero-knowledge contract rules are currently verifying that amount and recipient conditions are satisfied.
@@ -153,7 +153,7 @@ export function VerificationCard({ intent }: VerificationCardProps) {
         <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 space-y-3 text-amber-300">
           <div className="flex items-center gap-2">
             <AlertTriangle className="size-4 text-amber-400" />
-            <span className="text-xs font-semibold">Payment intent expired</span>
+            <span className="text-xs font-semibold">Payment Intent Expired</span>
           </div>
           <p className="text-xs text-amber-200/90 leading-relaxed">
             This intent is no longer accepting payments. The configured deadline has elapsed and protocol nodes will reject subsequent settlement proofs.
@@ -164,7 +164,7 @@ export function VerificationCard({ intent }: VerificationCardProps) {
               className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-200 hover:bg-amber-500/20 transition-colors"
             >
               <PlusCircle className="size-3.5" />
-              Create new payment
+              Create New Payment Intent
             </Link>
           </div>
         </div>
@@ -175,7 +175,7 @@ export function VerificationCard({ intent }: VerificationCardProps) {
         <div className="rounded-xl border border-border/80 bg-muted/30 p-4 space-y-2 text-muted-foreground">
           <div className="flex items-center gap-2 text-foreground">
             <Ban className="size-4 text-rose-400" />
-            <span className="text-xs font-semibold">Payment intent cancelled</span>
+            <span className="text-xs font-semibold">Payment Intent Cancelled</span>
           </div>
           <p className="text-xs leading-relaxed">
             This payment intent was cancelled by the merchant before completion. Customers can no longer submit payments against this identifier.
@@ -188,7 +188,7 @@ export function VerificationCard({ intent }: VerificationCardProps) {
         <div className="rounded-xl border border-rose-500/30 bg-rose-950/20 p-4 space-y-2 text-rose-300">
           <div className="flex items-center gap-2">
             <XCircle className="size-4 text-rose-400" />
-            <span className="text-xs font-semibold">Verification failed</span>
+            <span className="text-xs font-semibold">Verification Failed</span>
           </div>
           <p className="text-xs text-rose-200/90 leading-relaxed">
             The cryptographic proof failed to satisfy the configured payment conditions, or verification could not be completed on the network.

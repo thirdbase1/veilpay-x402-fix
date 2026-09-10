@@ -5,12 +5,12 @@ import { Reveal } from '@/components/site/reveal'
 const values = [
   {
     icon: ShieldCheck,
-    title: 'Privacy by design',
+    title: 'Privacy by Design',
     body: 'Only disclose what the payment requires.',
   },
   {
     icon: FileCheck2,
-    title: 'Cryptographic verification',
+    title: 'Cryptographic Verification',
     body: 'Payment conditions can be verified rather than blindly trusted.',
   },
   {

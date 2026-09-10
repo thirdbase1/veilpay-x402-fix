@@ -9,7 +9,7 @@ export interface NavLink {
 
 export const primaryNav: NavLink[] = [
   { label: 'Product', href: '#product', anchor: true },
-  { label: 'How it works', href: '#how-it-works', anchor: true },
+  { label: 'How It Works', href: '#how-it-works', anchor: true },
   { label: 'Privacy', href: '#privacy', anchor: true },
   { label: 'Developers', href: '#developers', anchor: true },
 ]
