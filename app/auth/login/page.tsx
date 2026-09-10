@@ -9,7 +9,8 @@ import { ArrowRight, Lock, Mail, AlertCircle, Loader2 } from 'lucide-react'
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTarget = searchParams.get('redirect') || '/app'
+  const rawRedirect = searchParams.get('redirect') || '/app'
+  const redirectTarget = (rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')) ? rawRedirect : '/app'
   const callbackError = searchParams.get('error')
 
   const [email, setEmail] = useState('')

@@ -74,7 +74,6 @@ export async function POST() {
 
     return NextResponse.json({
       success: true,
-      user: authData.user,
       redirect: '/app',
     })
   } catch (err: unknown) {

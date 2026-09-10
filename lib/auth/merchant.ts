@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import type { User } from '@supabase/supabase-js'
 
 export interface MerchantProfile {
   id: string
@@ -7,46 +8,71 @@ export interface MerchantProfile {
   website: string | null
   description: string | null
   receiving_address: string | null
-  privacy_preset: 'strict' | 'standard' | null
+  privacy_preset: 'strict' | 'standard' | 'minimal' | null
   auto_expire_hours: number | null
   onboarding_status: 'pending' | 'completed'
   created_at: string
   updated_at: string
 }
 
-export async function getCurrentUser() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
+export async function getCurrentUser(): Promise<User | null> {
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
 
-  if (error || !user) {
+    if (error || !user) {
+      return null
+    }
+
+    return user
+  } catch {
     return null
   }
+}
 
+export async function requireAuth(): Promise<User> {
+  const user = await getCurrentUser()
+  if (!user) {
+    throw new Error('UNAUTHORIZED')
+  }
   return user
 }
 
 export async function getCurrentMerchantProfile(): Promise<MerchantProfile | null> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-  if (!user) {
+    if (!user) {
+      return null
+    }
+
+    const { data, error } = await supabase
+      .from('merchant_profiles')
+      .select('*')
+      .eq('auth_user_id', user.id)
+      .maybeSingle()
+
+    if (error || !data) {
+      return null
+    }
+
+    return data as MerchantProfile
+  } catch {
     return null
   }
+}
 
-  const { data, error } = await supabase
-    .from('merchant_profiles')
-    .select('*')
-    .eq('auth_user_id', user.id)
-    .maybeSingle()
-
-  if (error || !data) {
-    return null
+export async function requireMerchantProfile(): Promise<{ user: User; profile: MerchantProfile }> {
+  const user = await requireAuth()
+  const profile = await getCurrentMerchantProfile()
+  if (!profile) {
+    throw new Error('PROFILE_NOT_FOUND')
   }
-
-  return data as MerchantProfile
+  return { user, profile }
 }

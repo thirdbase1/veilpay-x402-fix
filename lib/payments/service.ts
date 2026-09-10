@@ -112,8 +112,8 @@ export async function createPaymentIntentApi(
   })
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: res.statusText }))
-    throw new Error(err.message || 'Failed to create payment intent')
+    const err = await res.json().catch(() => ({ error: res.statusText }))
+    throw new Error(err.error || err.message || 'Failed to create payment intent')
   }
 
   return res.json()
@@ -126,8 +126,8 @@ export async function cancelPaymentIntentApi(id: string): Promise<PaymentIntent>
   })
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: res.statusText }))
-    throw new Error(err.message || 'Failed to cancel payment intent')
+    const err = await res.json().catch(() => ({ error: res.statusText }))
+    throw new Error(err.error || err.message || 'Failed to cancel payment intent')
   }
 
   const data = await res.json()

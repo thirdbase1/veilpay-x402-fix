@@ -472,7 +472,7 @@ console.log('Current status:', status)`
                         <span className="truncate">{method.name}</span>
                       </div>
                       {method.requiresWallet && (
-                        <Wallet className="size-3 text-amber-400 shrink-0" title="Requires Wallet" />
+                        <Wallet className="size-3 text-amber-400 shrink-0" aria-label="Requires Wallet" />
                       )}
                     </button>
                   )
@@ -797,7 +797,7 @@ console.log('Current status:', status)`
                   <span className="font-mono text-xs font-semibold text-foreground">
                     Execution Response / Output
                   </span>
-                  {result && (
+                  {Boolean(result) && (
                     <span className="flex items-center gap-1 rounded bg-accent/20 px-1.5 py-0.5 font-mono text-[10px] font-bold text-accent">
                       <CheckCircle2 className="size-3" />
                       <span>SUCCESS</span>
@@ -857,7 +857,7 @@ console.log('Current status:', status)`
                   </div>
                 )}
 
-                {result && (
+                {Boolean(result) && (
                   <pre className="overflow-x-auto text-foreground leading-relaxed select-text max-h-[420px]">
                     {JSON.stringify(result, null, 2)}
                   </pre>

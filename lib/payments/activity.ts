@@ -147,7 +147,10 @@ export async function listMerchantActivities(
     }
 
     if (intentId && intentId.trim()) {
-      dbQuery = dbQuery.ilike('intent_id', `%${intentId.trim()}%`)
+      const sanitized = intentId.trim().slice(0, 64).replace(/[%_]/g, '')
+      if (sanitized) {
+        dbQuery = dbQuery.ilike('intent_id', `%${sanitized}%`)
+      }
     }
 
     if (unreadOnly) {
