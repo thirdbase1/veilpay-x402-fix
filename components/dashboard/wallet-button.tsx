@@ -91,10 +91,11 @@ export function WalletButton() {
       <button
         type="button"
         onClick={() => connect()}
-        className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-secondary/60 px-3.5 text-xs font-medium text-foreground transition hover:border-border/80 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="inline-flex h-9 items-center gap-1.5 sm:gap-2 rounded-lg border border-border bg-secondary/60 px-2.5 sm:px-3.5 text-xs font-medium text-foreground transition hover:border-border/80 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <Wallet className="size-3.5 text-muted-foreground" />
-        Connect wallet
+        <Wallet className="size-3.5 text-muted-foreground shrink-0" />
+        <span className="hidden sm:inline">Connect wallet</span>
+        <span className="sm:hidden">Wallet</span>
       </button>
 
       {error && (

@@ -105,3 +105,34 @@ export interface CreatePaymentIntentInput {
   conditions: PaymentConditions
   publishOnMidnight?: boolean
 }
+
+export type ActivityEventType =
+  | 'PAYMENT_INTENT_CREATED'
+  | 'PAYMENT_DETECTED'
+  | 'VERIFICATION_STARTED'
+  | 'PAYMENT_VERIFIED'
+  | 'PAYMENT_FAILED'
+  | 'PAYMENT_INTENT_EXPIRED'
+  | 'PAYMENT_INTENT_CANCELLED'
+
+export interface ActivityRecord {
+  id: string
+  authUserId: string
+  merchantId?: string | null
+  intentId?: string | null
+  eventType: ActivityEventType
+  title: string
+  description: string
+  metadata?: Record<string, unknown>
+  isRead: boolean
+  createdAt: string
+}
+
+export interface ActivityListResponse {
+  activities: ActivityRecord[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+  unreadCount: number
+}

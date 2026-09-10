@@ -5,6 +5,7 @@ import {
 } from '@/lib/payments/server-store'
 import { createClient } from '@/lib/supabase/server'
 import type { PaymentIntent } from '@/lib/payments/types'
+import { recordActivityEvent } from '@/lib/payments/activity'
 
 export const dynamic = 'force-dynamic'
 
@@ -116,6 +117,21 @@ export async function POST(
           updatedAt: updatedDb.updated_at,
           onChainReference: updatedDb.reference ?? undefined,
         }
+
+        // Record persistent cancel event
+        await recordActivityEvent({
+          authUserId: user.id,
+          intentId: id,
+          eventType: 'PAYMENT_INTENT_CANCELLED',
+          title: 'Payment Intent Cancelled',
+          description: `Payment intent ${id} was cancelled by merchant.`,
+          metadata: {
+            amount: updatedDb.amount,
+            asset: updatedDb.asset,
+            recipient: updatedDb.recipient,
+            reference: updatedDb.reference ?? null,
+          },
+        })
 
         return NextResponse.json({ intent: mapped })
       }

@@ -8,6 +8,7 @@ import { getMidnightClient } from '@/lib/midnight/client'
 import { midnightPublicConfig } from '@/lib/config'
 import type { PaymentConditions, PaymentIntent, PaymentIntentStatus } from '@/lib/payments/types'
 import { createClient } from '@/lib/supabase/server'
+import { recordActivityEvent } from '@/lib/payments/activity'
 
 export const dynamic = 'force-dynamic'
 
@@ -244,6 +245,22 @@ export async function POST(request: Request) {
           metadata: {},
           created_at: saved.createdAt,
           updated_at: saved.updatedAt ?? saved.createdAt,
+        })
+
+        // Record persistent activity event
+        await recordActivityEvent({
+          authUserId: user.id,
+          merchantId: profile?.id ?? null,
+          intentId: saved.id,
+          eventType: 'PAYMENT_INTENT_CREATED',
+          title: 'Payment Intent Created',
+          description: `Created payment intent for ${saved.conditions.amount.amount} ${saved.conditions.amount.asset}`,
+          metadata: {
+            amount: saved.conditions.amount.amount,
+            asset: saved.conditions.amount.asset,
+            recipient: saved.conditions.recipient,
+            reference: saved.conditions.reference || null,
+          },
         })
       }
     } catch (dbErr) {

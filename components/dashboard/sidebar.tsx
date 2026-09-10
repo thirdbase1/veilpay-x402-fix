@@ -6,6 +6,7 @@ import { BrandWordmark } from '@/components/site/brand'
 import {
   LayoutDashboard,
   ReceiptText,
+  Activity as ActivityIcon,
   PlusCircle,
   FileCode2,
   Settings,
@@ -26,6 +27,7 @@ export function DashboardSidebar({ onNavigate }: SidebarProps) {
   const mainNav = [
     { href: '/app', label: 'Overview', icon: LayoutDashboard },
     { href: '/app/intents', label: 'Payment Intents', icon: ReceiptText },
+    { href: '/app/activity', label: 'Activity', icon: ActivityIcon },
     { href: '/app/create', label: 'Create Payment', icon: PlusCircle },
   ]
 

@@ -69,10 +69,10 @@ export function MerchantUserMenu({ initialBusinessName }: MerchantUserMenuProps)
         <span className="flex size-5 sm:size-6 items-center justify-center rounded-full bg-primary/20 text-[11px] font-bold text-primary font-mono shrink-0">
           {initial}
         </span>
-        <span className="max-w-[100px] sm:max-w-[140px] truncate font-medium text-foreground">
+        <span className="hidden sm:inline max-w-[100px] md:max-w-[140px] truncate font-medium text-foreground">
           {displayName}
         </span>
-        <ChevronDown className="size-3 text-muted-foreground shrink-0" />
+        <ChevronDown className="size-3 text-muted-foreground shrink-0 hidden sm:block" />
       </button>
 
       {isOpen && (
