@@ -73,7 +73,6 @@ export async function GET(request: Request) {
       query = query.range(from, to)
 
       const { data: dbIntents, count, error } = await query
-      console.log('[v0] GET intents db query result:', { count, len: dbIntents?.length, error, userId: user.id })
 
       if (!error && dbIntents !== null) {
         const total = count ?? dbIntents.length
@@ -229,11 +228,11 @@ export async function POST(request: Request) {
           .eq('auth_user_id', user.id)
           .maybeSingle()
 
-        const insertRes = await supabase.from('payment_intents').insert({
+        await supabase.from('payment_intents').insert({
           id: saved.id,
           merchant_id: profile?.id ?? null,
           auth_user_id: user.id,
-          network: saved.network ?? midnightPublicConfig.network,
+          network: saved.network || midnightPublicConfig.network || 'midnight-testnet',
           status: saved.status,
           amount_kind: saved.conditions.amount.kind,
           asset: saved.conditions.amount.asset,
@@ -246,7 +245,6 @@ export async function POST(request: Request) {
           created_at: saved.createdAt,
           updated_at: saved.updatedAt ?? saved.createdAt,
         })
-        console.log('[v0] POST insert result:', { error: insertRes.error, userId: user.id })
       }
     } catch (dbErr) {
       console.warn('[VeilPay] Supabase intent sync notice:', dbErr)
