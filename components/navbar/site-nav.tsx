@@ -2,14 +2,16 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { Menu, X, ArrowUpRight } from 'lucide-react'
+import { Menu, X, ArrowUpRight, User } from 'lucide-react'
 import { Wordmark } from '@/components/site/brand'
 import { cn } from '@/lib/utils'
 import { primaryNav, utilityNav } from './nav-links'
+import { createClient } from '@/lib/supabase/client'
 
 export function SiteNav() {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -24,6 +26,21 @@ export function SiteNav() {
       document.body.style.overflow = ''
     }
   }, [open])
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const supabase = createClient()
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+        setIsAuthenticated(!!session)
+      } catch {
+        setIsAuthenticated(false)
+      }
+    }
+    checkAuth()
+  }, [])
 
   return (
     <header
@@ -66,13 +83,32 @@ export function SiteNav() {
           >
             {utilityNav.docs.label}
           </Link>
-          <Link
-            href={utilityNav.app.href}
-            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            {utilityNav.app.label}
-            <ArrowUpRight className="size-4" />
-          </Link>
+
+          {isAuthenticated ? (
+            <Link
+              href="/app"
+              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span>Merchant Console</span>
+              <ArrowUpRight className="size-4" />
+            </Link>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/auth/login"
+                className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/auth/signup"
+                className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span>Get Started</span>
+                <ArrowUpRight className="size-4" />
+              </Link>
+            </div>
+          )}
         </div>
 
         <button
@@ -113,14 +149,34 @@ export function SiteNav() {
             >
               {utilityNav.docs.label}
             </Link>
-            <Link
-              href={utilityNav.app.href}
-              onClick={() => setOpen(false)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {utilityNav.app.label}
-              <ArrowUpRight className="size-4" />
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                href="/app"
+                onClick={() => setOpen(false)}
+                className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span>Merchant Console</span>
+                <ArrowUpRight className="size-4" />
+              </Link>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <Link
+                  href="/auth/login"
+                  onClick={() => setOpen(false)}
+                  className="inline-flex items-center justify-center rounded-md border border-border px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  onClick={() => setOpen(false)}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                  <span>Get Started</span>
+                  <ArrowUpRight className="size-4" />
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}
