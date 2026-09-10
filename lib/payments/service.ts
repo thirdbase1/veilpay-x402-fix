@@ -11,17 +11,67 @@ import type {
  * with the server store and the Midnight integration boundary.
  */
 
-export async function fetchPaymentIntents(): Promise<PaymentIntent[]> {
-  const res = await fetch('/api/intents', {
+export interface ListPaymentIntentsParams {
+  search?: string
+  status?: 'all' | PaymentIntentStatus
+  sort?: 'newest' | 'oldest' | 'amount_desc' | 'amount_asc' | 'expires_asc' | 'status'
+  page?: number
+  pageSize?: number
+  recipient?: string
+}
+
+export interface ListPaymentIntentsResponse {
+  intents: PaymentIntent[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+/**
+ * Fetch paginated, filtered, and sorted payment intents from the authoritative API.
+ */
+export async function listPaymentIntents(
+  params?: ListPaymentIntentsParams,
+): Promise<ListPaymentIntentsResponse> {
+  const query = new URLSearchParams()
+  if (params?.search) query.set('search', params.search)
+  if (params?.status && params.status !== 'all') query.set('status', params.status)
+  if (params?.sort) query.set('sort', params.sort)
+  if (params?.page) query.set('page', params.page.toString())
+  if (params?.pageSize) query.set('pageSize', params.pageSize.toString())
+  if (params?.recipient) query.set('recipient', params.recipient)
+
+  const url = query.toString() ? `/api/intents?${query.toString()}` : '/api/intents'
+
+  const res = await fetch(url, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
   })
+
   if (!res.ok) {
     throw new Error(`Failed to load payment intents: ${res.statusText}`)
   }
+
   const data = await res.json()
-  return data.intents as PaymentIntent[]
+  return {
+    intents: data.intents as PaymentIntent[],
+    total: typeof data.total === 'number' ? data.total : (data.intents?.length ?? 0),
+    page: typeof data.page === 'number' ? data.page : 1,
+    pageSize: typeof data.pageSize === 'number' ? data.pageSize : (data.intents?.length ?? 10),
+    totalPages: typeof data.totalPages === 'number' ? data.totalPages : 1,
+  }
+}
+
+/**
+ * Backwards-compatible convenience getter returning plain PaymentIntent[]
+ */
+export async function fetchPaymentIntents(
+  params?: ListPaymentIntentsParams,
+): Promise<PaymentIntent[]> {
+  const result = await listPaymentIntents(params)
+  return result.intents
 }
 
 export async function fetchPaymentIntent(id: string): Promise<PaymentIntent> {

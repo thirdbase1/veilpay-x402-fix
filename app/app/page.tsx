@@ -1,26 +1,43 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import Link from 'next/link'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { DashboardHeader } from '@/components/dashboard/header'
 import { MetricCard } from '@/components/dashboard/metric-card'
 import { PaymentIntentTable } from '@/components/dashboard/payment-intent-table'
-import { EmptyState } from '@/components/dashboard/empty-state'
 import { fetchPaymentIntents, fetchDashboardMetrics } from '@/lib/payments/service'
-import type { PaymentIntent, DashboardMetrics } from '@/lib/payments/types'
-import { Clock, CheckCircle2, RefreshCw, AlertTriangle, ShieldCheck } from 'lucide-react'
+import type { PaymentIntent, DashboardMetrics, PaymentIntentStatus } from '@/lib/payments/types'
+import {
+  Clock,
+  CheckCircle2,
+  RefreshCw,
+  AlertTriangle,
+  ShieldCheck,
+  ArrowRight,
+  Search,
+  X,
+} from 'lucide-react'
 
 export default function MerchantOverviewPage() {
   const [intents, setIntents] = useState<PaymentIntent[]>([])
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | PaymentIntentStatus>('all')
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (isRefresh = false) => {
     try {
       setError(null)
+      if (isRefresh) {
+        setIsRefreshing(true)
+      } else {
+        setIsLoading(true)
+      }
       const [fetchedIntents, fetchedMetrics] = await Promise.all([
-        fetchPaymentIntents(),
+        fetchPaymentIntents({ pageSize: 15 }),
         fetchDashboardMetrics(),
       ])
       setIntents(fetchedIntents)
@@ -30,6 +47,7 @@ export default function MerchantOverviewPage() {
       setError(msg)
     } finally {
       setIsLoading(false)
+      setIsRefreshing(false)
     }
   }, [])
 
@@ -37,11 +55,41 @@ export default function MerchantOverviewPage() {
     loadData()
   }, [loadData])
 
+  const handleIntentUpdated = (updated: PaymentIntent) => {
+    setIntents((prev) =>
+      prev.map((item) => (item.id === updated.id ? updated : item)),
+    )
+    // Refresh metrics in background
+    fetchDashboardMetrics()
+      .then(setMetrics)
+      .catch(() => {})
+  }
+
+  // Filtered recent intents for quick overview
+  const filteredIntents = useMemo(() => {
+    let list = intents
+    if (statusFilter !== 'all') {
+      list = list.filter((i) => i.status === statusFilter)
+    }
+    if (search.trim()) {
+      const s = search.toLowerCase()
+      list = list.filter(
+        (i) =>
+          i.id.toLowerCase().includes(s) ||
+          i.conditions.reference?.toLowerCase().includes(s) ||
+          i.conditions.recipient.toLowerCase().includes(s),
+      )
+    }
+    return list
+  }, [intents, statusFilter, search])
+
+  const isFiltered = statusFilter !== 'all' || Boolean(search.trim())
+
   return (
     <DashboardLayout>
       <DashboardHeader
         title="Overview"
-        description="Create and monitor privacy-preserving payment intents."
+        description="Create, monitor, and manage privacy-preserving payment intents."
         action={{ href: '/app/create', label: 'Create payment' }}
       />
 
@@ -50,17 +98,16 @@ export default function MerchantOverviewPage() {
         {error && (
           <div
             role="alert"
-            className="rounded-xl border border-rose-500/30 bg-rose-950/20 p-4 text-xs text-rose-300"
+            className="rounded-xl border border-rose-500/30 bg-rose-950/20 p-4 text-xs text-rose-300 flex items-center justify-between"
           >
-            <p className="font-semibold">Unable to fetch protocol state</p>
-            <p className="mt-1 text-rose-400/90">{error}</p>
+            <div>
+              <p className="font-semibold">Unable to fetch protocol state</p>
+              <p className="mt-1 text-rose-400/90">{error}</p>
+            </div>
             <button
               type="button"
-              onClick={() => {
-                setIsLoading(true)
-                loadData()
-              }}
-              className="mt-2 font-mono text-[11px] underline hover:text-rose-200"
+              onClick={() => loadData(false)}
+              className="font-mono text-xs underline text-rose-300 hover:text-rose-200"
             >
               Retry
             </button>
@@ -104,36 +151,106 @@ export default function MerchantOverviewPage() {
 
         {/* Recent Payment Intents Section */}
         <div className="rounded-2xl border border-border/70 bg-card/40 backdrop-blur-sm overflow-hidden">
-          <div className="flex flex-col gap-2 border-b border-border/70 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
+          <div className="flex flex-col gap-3 border-b border-border/70 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
             <div>
-              <h2 className="text-sm font-semibold tracking-tight text-foreground">
-                Recent Payment Intents
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-semibold tracking-tight text-foreground">
+                  Recent Payment Intents
+                </h2>
+                <span className="rounded-full bg-muted/60 px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
+                  {intents.length}
+                </span>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Real payment intents registered in the VeilPay protocol store.
+                Authoritative payment intents registered in VeilPay.
               </p>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/60 px-2.5 py-0.5 font-mono text-[11px] text-muted-foreground">
-                <ShieldCheck className="size-3 text-primary" />
-                Zero-Knowledge Privacy
-              </span>
+              <button
+                type="button"
+                onClick={() => loadData(true)}
+                disabled={isLoading || isRefreshing}
+                aria-label="Refresh intents"
+                title="Refresh intent list"
+                className="inline-flex size-8 items-center justify-center rounded-xl border border-border/80 bg-background/80 text-muted-foreground hover:bg-muted hover:text-foreground transition disabled:opacity-50"
+              >
+                <RefreshCw
+                  className={`size-3.5 ${isRefreshing ? 'animate-spin text-primary' : ''}`}
+                />
+              </button>
+
+              <Link
+                href="/app/intents"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-background/80 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition"
+              >
+                <span>View all intents</span>
+                <ArrowRight className="size-3.5" />
+              </Link>
             </div>
           </div>
 
-          {isLoading ? (
-            <div className="p-8 text-center text-xs text-muted-foreground">
-              <div className="inline-block size-5 animate-spin rounded-full border-2 border-primary border-t-transparent mb-2" />
-              <p>Loading payment intents from protocol state...</p>
+          {/* Quick Search & Status Pills if intents exist */}
+          {intents.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 border-b border-border/50 bg-muted/10 p-3 sm:px-6">
+              {/* Search input */}
+              <div className="relative flex-1 max-w-xs">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Filter recent intents..."
+                  className="w-full rounded-lg border border-border/70 bg-background/80 pl-8 pr-7 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="size-3" />
+                  </button>
+                )}
+              </div>
+
+              {/* Status pills */}
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar font-mono text-[11px]">
+                {(
+                  [
+                    { id: 'all', label: 'All' },
+                    { id: 'awaiting_payment', label: 'Awaiting' },
+                    { id: 'verified', label: 'Verified' },
+                    { id: 'expired', label: 'Expired' },
+                  ] as const
+                ).map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setStatusFilter(s.id)}
+                    className={`rounded-md px-2 py-0.5 transition ${
+                      statusFilter === s.id
+                        ? 'bg-secondary font-medium text-foreground border border-border'
+                        : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          ) : intents.length === 0 ? (
-            <div className="p-6 sm:p-8">
-              <EmptyState />
-            </div>
-          ) : (
-            <PaymentIntentTable intents={intents} />
           )}
+
+          <PaymentIntentTable
+            intents={filteredIntents}
+            isLoading={isLoading}
+            isFiltered={isFiltered}
+            onResetFilters={() => {
+              setSearch('')
+              setStatusFilter('all')
+            }}
+            onIntentUpdated={handleIntentUpdated}
+          />
         </div>
       </main>
     </DashboardLayout>

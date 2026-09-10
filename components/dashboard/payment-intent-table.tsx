@@ -1,101 +1,283 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import type { PaymentIntent } from '@/lib/payments/types'
 import { PaymentIntentStatusBadge } from './payment-intent-status'
+import { PaymentIntentRowActions } from './payment-intent-row-actions'
+import { PaymentIntentCancelDialog } from './payment-intent-cancel-dialog'
+import { EmptyState } from './empty-state'
 import { describeAmountCondition } from '@/lib/payments/intent'
-import { ArrowUpRight } from 'lucide-react'
+import { Copy, Check, FilterX } from 'lucide-react'
 
 interface PaymentIntentTableProps {
   intents: PaymentIntent[]
   isLoading?: boolean
+  isFiltered?: boolean
+  onResetFilters?: () => void
+  onIntentUpdated?: (updated: PaymentIntent) => void
 }
 
-export function PaymentIntentTable({ intents, isLoading = false }: PaymentIntentTableProps) {
+export function PaymentIntentTable({
+  intents,
+  isLoading = false,
+  isFiltered = false,
+  onResetFilters,
+  onIntentUpdated,
+}: PaymentIntentTableProps) {
+  const [intentToCancel, setIntentToCancel] = useState<PaymentIntent | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  const handleCopyId = async (id: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      await navigator.clipboard.writeText(id)
+      setCopiedId(id)
+      setTimeout(() => setCopiedId(null), 1800)
+    } catch (err) {
+      console.warn('[VeilPay] ID copy failed:', err)
+    }
+  }
+
   if (isLoading) {
     return (
-      <div className="space-y-3 p-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-12 w-full animate-pulse rounded-lg bg-muted/30" />
+      <div className="space-y-3 p-4 sm:p-6">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-16 w-full animate-pulse rounded-xl bg-muted/30 border border-border/40" />
         ))}
       </div>
     )
   }
 
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-xs">
-        <thead className="border-b border-border/70 bg-muted/20 text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
-          <tr>
-            <th scope="col" className="px-5 py-3.5 font-medium">Status</th>
-            <th scope="col" className="px-5 py-3.5 font-medium">Intent ID</th>
-            <th scope="col" className="px-5 py-3.5 font-medium">Requirement</th>
-            <th scope="col" className="px-5 py-3.5 font-medium">Created</th>
-            <th scope="col" className="px-5 py-3.5 font-medium">Expires</th>
-            <th scope="col" className="px-5 py-3.5 text-right font-medium">Action</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border/50 font-mono">
-          {intents.map((intent) => {
-            const formattedDate = new Date(intent.createdAt).toLocaleDateString(undefined, {
-              month: 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })
-            const formattedExpiry = intent.conditions.expiresAt
-              ? new Date(intent.conditions.expiresAt).toLocaleDateString(undefined, {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-              : 'Never'
+  if (intents.length === 0) {
+    if (isFiltered) {
+      return (
+        <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center space-y-3">
+          <div className="flex size-10 items-center justify-center rounded-xl border border-border bg-muted/40 text-muted-foreground">
+            <FilterX className="size-5" />
+          </div>
+          <p className="text-sm font-semibold text-foreground">No payment intents match your criteria</p>
+          <p className="text-xs text-muted-foreground max-w-sm">
+            Try adjusting your search query, status filters, or sorting preferences.
+          </p>
+          {onResetFilters && (
+            <button
+              type="button"
+              onClick={onResetFilters}
+              className="mt-2 text-xs font-mono text-primary hover:underline"
+            >
+              Reset all filters
+            </button>
+          )}
+        </div>
+      )
+    }
+    return (
+      <div className="p-4 sm:p-8">
+        <EmptyState />
+      </div>
+    )
+  }
 
-            return (
-              <tr
-                key={intent.id}
-                className="group transition hover:bg-card/60"
-              >
-                <td className="whitespace-nowrap px-5 py-3.5">
-                  <PaymentIntentStatusBadge status={intent.status} />
-                </td>
-                <td className="whitespace-nowrap px-5 py-3.5 font-semibold text-foreground">
-                  <Link
-                    href={`/app/intents/${intent.id}`}
-                    className="hover:underline flex items-center gap-1.5 text-foreground"
-                  >
-                    <span>{intent.id}</span>
+  return (
+    <>
+      {/* Desktop Table View (md and above) */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-left text-xs">
+          <thead className="border-b border-border/70 bg-muted/20 text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th scope="col" className="px-5 py-3.5 font-medium">Status</th>
+              <th scope="col" className="px-5 py-3.5 font-medium">Intent ID & Ref</th>
+              <th scope="col" className="px-5 py-3.5 font-medium">Requirement</th>
+              <th scope="col" className="px-5 py-3.5 font-medium">Created</th>
+              <th scope="col" className="px-5 py-3.5 font-medium">Expires</th>
+              <th scope="col" className="px-5 py-3.5 text-right font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/50">
+            {intents.map((intent) => {
+              const formattedDate = new Date(intent.createdAt).toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+              const formattedExpiry = intent.conditions.expiresAt
+                ? new Date(intent.conditions.expiresAt).toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : 'Never'
+
+              const isExpired =
+                intent.conditions.expiresAt &&
+                new Date(intent.conditions.expiresAt).getTime() < Date.now()
+
+              return (
+                <tr
+                  key={intent.id}
+                  className="group transition hover:bg-card/60"
+                >
+                  <td className="whitespace-nowrap px-5 py-3.5">
+                    <PaymentIntentStatusBadge status={intent.status} />
+                  </td>
+                  <td className="whitespace-nowrap px-5 py-3.5">
+                    <div className="flex items-center gap-1.5 font-mono">
+                      <Link
+                        href={`/app/intents/${intent.id}`}
+                        className="font-semibold text-foreground hover:underline truncate max-w-[170px]"
+                        title={intent.id}
+                      >
+                        {intent.id}
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={(e) => handleCopyId(intent.id, e)}
+                        aria-label="Copy intent ID"
+                        title="Copy Intent ID"
+                        className="text-muted-foreground hover:text-foreground transition p-0.5 rounded"
+                      >
+                        {copiedId === intent.id ? (
+                          <Check className="size-3 text-emerald-400" />
+                        ) : (
+                          <Copy className="size-3" />
+                        )}
+                      </button>
+                    </div>
                     {intent.conditions.reference && (
-                      <span className="font-sans text-[11px] font-normal text-muted-foreground">
-                        ({intent.conditions.reference})
-                      </span>
+                      <p className="font-sans text-[11px] text-muted-foreground truncate max-w-[200px]">
+                        Ref: {intent.conditions.reference}
+                      </p>
                     )}
-                  </Link>
-                </td>
-                <td className="whitespace-nowrap px-5 py-3.5 text-foreground font-sans">
-                  {describeAmountCondition(intent.conditions)}
-                </td>
-                <td className="whitespace-nowrap px-5 py-3.5 text-muted-foreground font-sans">
-                  {formattedDate}
-                </td>
-                <td className="whitespace-nowrap px-5 py-3.5 text-muted-foreground font-sans">
-                  {formattedExpiry}
-                </td>
-                <td className="whitespace-nowrap px-5 py-3.5 text-right">
+                  </td>
+                  <td className="whitespace-nowrap px-5 py-3.5 text-foreground font-sans">
+                    <div className="font-medium">
+                      {describeAmountCondition(intent.conditions)}
+                    </div>
+                    <span className="font-mono text-[10px] text-muted-foreground">
+                      Asset: {intent.conditions.amount.asset}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-5 py-3.5 text-muted-foreground font-sans">
+                    {formattedDate}
+                  </td>
+                  <td className="whitespace-nowrap px-5 py-3.5 text-muted-foreground font-sans">
+                    <span className={isExpired && intent.status === 'awaiting_payment' ? 'text-amber-400 font-medium' : ''}>
+                      {formattedExpiry}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-5 py-3.5 text-right">
+                    <PaymentIntentRowActions
+                      intent={intent}
+                      onCancelClick={(target) => setIntentToCancel(target)}
+                    />
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile Card View (below md) */}
+      <div className="block md:hidden divide-y divide-border/60">
+        {intents.map((intent) => {
+          const formattedDate = new Date(intent.createdAt).toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+          const formattedExpiry = intent.conditions.expiresAt
+            ? new Date(intent.conditions.expiresAt).toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : 'Never'
+
+          return (
+            <div key={intent.id} className="p-4 space-y-3 transition hover:bg-card/40">
+              {/* Header: Status and Timestamp */}
+              <div className="flex items-center justify-between gap-2">
+                <PaymentIntentStatusBadge status={intent.status} />
+                <span className="text-[11px] text-muted-foreground">{formattedDate}</span>
+              </div>
+
+              {/* ID & Reference */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between gap-2">
                   <Link
                     href={`/app/intents/${intent.id}`}
-                    className="inline-flex items-center gap-1 rounded-md border border-border/80 px-2.5 py-1 text-[11px] font-sans font-medium text-foreground transition hover:border-border hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="font-mono text-xs font-semibold text-foreground hover:underline break-all"
                   >
-                    <span>Manage</span>
-                    <ArrowUpRight className="size-3" />
+                    {intent.id}
                   </Link>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
+                  <button
+                    type="button"
+                    onClick={(e) => handleCopyId(intent.id, e)}
+                    className="text-muted-foreground hover:text-foreground shrink-0 p-1"
+                    aria-label="Copy intent ID"
+                  >
+                    {copiedId === intent.id ? (
+                      <Check className="size-3.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="size-3.5" />
+                    )}
+                  </button>
+                </div>
+                {intent.conditions.reference && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Ref: <span className="font-mono text-foreground">{intent.conditions.reference}</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Condition & Expiration */}
+              <div className="grid grid-cols-2 gap-2 rounded-lg border border-border/50 bg-muted/20 p-2.5 text-xs">
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">
+                    Requirement
+                  </span>
+                  <span className="font-medium text-foreground">
+                    {describeAmountCondition(intent.conditions)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">
+                    Expires
+                  </span>
+                  <span className="text-muted-foreground">{formattedExpiry}</span>
+                </div>
+              </div>
+
+              {/* Mobile Actions Bar */}
+              <div className="pt-1 flex items-center justify-between border-t border-border/40">
+                <span className="text-[11px] font-mono text-muted-foreground">Actions:</span>
+                <PaymentIntentRowActions
+                  intent={intent}
+                  compact={false}
+                  onCancelClick={(target) => setIntentToCancel(target)}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Cancel Confirmation Modal Dialog */}
+      <PaymentIntentCancelDialog
+        intent={intentToCancel}
+        isOpen={Boolean(intentToCancel)}
+        onClose={() => setIntentToCancel(null)}
+        onSuccess={(updated) => {
+          onIntentUpdated?.(updated)
+        }}
+      />
+    </>
   )
 }
