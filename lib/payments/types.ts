@@ -35,7 +35,19 @@ export interface PaymentConditions {
   reference?: string
 }
 
-/** Lifecycle of a payment intent. Advanced only by the verification layer. */
+/** Alias for PaymentConditions for protocol-level requirement descriptors. */
+export type PaymentRequirement = PaymentConditions
+
+/**
+ * Allowed statuses supported by the actual protocol/application state:
+ * - draft: Defined locally, not yet active or broadcast
+ * - awaiting_payment: Active, published, waiting for customer payment
+ * - verifying: Payment transaction detected, zero-knowledge proof verification underway
+ * - verified: Payment satisfied all intent conditions
+ * - expired: Intent deadline elapsed before payment satisfied
+ * - failed: Verification or execution failed
+ * - cancelled: Merchant cancelled intent prior to settlement
+ */
 export type PaymentIntentStatus =
   | 'draft'
   | 'awaiting_payment'
@@ -43,15 +55,19 @@ export type PaymentIntentStatus =
   | 'verified'
   | 'expired'
   | 'failed'
+  | 'cancelled'
 
 export interface PaymentIntent {
-  /** Stable client-generated identifier for the intent. */
+  /** Stable identifier for the intent (e.g. pi_...). */
   id: string
   conditions: PaymentConditions
   status: PaymentIntentStatus
   createdAt: string
+  updatedAt?: string
   /** Network the intent targets, echoed from configuration. */
   network?: string
+  /** Optional transaction hash or on-chain registration reference once submitted to Midnight. */
+  onChainReference?: string
 }
 
 /**
@@ -67,4 +83,25 @@ export interface VerificationResult {
   /** Opaque proof reference produced by the protocol, if available. */
   proofReference?: string
   verifiedAt?: string
+}
+
+export type PaymentVerification = VerificationResult
+
+export interface MerchantAccount {
+  address: string
+  network: string
+  label?: string
+}
+
+export interface DashboardMetrics {
+  activeCount: number
+  verifiedCount: number
+  pendingCount: number
+  expiredCount: number
+  totalCount: number
+}
+
+export interface CreatePaymentIntentInput {
+  conditions: PaymentConditions
+  publishOnMidnight?: boolean
 }
