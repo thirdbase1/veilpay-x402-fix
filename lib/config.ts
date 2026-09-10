@@ -55,4 +55,5 @@ export const routes = {
   home: '/',
   app: '/app',
   docs: '/docs',
+  sdk: '/docs/sdk',
 } as const

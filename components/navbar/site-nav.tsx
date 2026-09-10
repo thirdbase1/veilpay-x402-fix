@@ -84,6 +84,13 @@ export function SiteNav() {
             {utilityNav.docs.label}
           </Link>
 
+          <Link
+            href={utilityNav.sdk.href}
+            className="rounded-md px-3 py-2 text-sm text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {utilityNav.sdk.label}
+          </Link>
+
           {isAuthenticated ? (
             <Link
               href="/app"
@@ -148,6 +155,13 @@ export function SiteNav() {
               className="inline-flex items-center justify-center rounded-md border border-border px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {utilityNav.docs.label}
+            </Link>
+            <Link
+              href={utilityNav.sdk.href}
+              onClick={() => setOpen(false)}
+              className="inline-flex items-center justify-center rounded-md border border-primary/30 bg-primary/10 px-4 py-3 text-sm font-medium text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {utilityNav.sdk.label}
             </Link>
             {isAuthenticated ? (
               <Link
