@@ -31,6 +31,7 @@ export const VALID_STATUS_TRANSITIONS: Record<PaymentIntentStatus, readonly Paym
   expired: [] as const,
   failed: [] as const,
   cancelled: [] as const,
+  refunded: [] as const,
 }
 
 export function isValidStatusTransition(

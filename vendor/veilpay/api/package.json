@@ -1,0 +1,15 @@
+{
+  "name": "@veilpay/api",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "module": "./dist/index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "rm -rf dist && tsc --project tsconfig.build.json",
+    "ci": "npm run typecheck && npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

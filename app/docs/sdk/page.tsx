@@ -141,6 +141,7 @@ function SdkExplorerContent() {
 
   // Intent ID input for methods that take an ID
   const [targetIntentId, setTargetIntentId] = useState('')
+const [paymentSecret, setPaymentSecret] = useState('')
 
   // List params
   const [listStatus, setListStatus] = useState<'all' | PaymentIntentStatus>('all')
@@ -237,9 +238,8 @@ function SdkExplorerContent() {
             throw new Error('Please enter a valid Payment Intent ID to pay.')
           }
 
-          const payer = account?.address || 'mn_explorer_session_account'
           const response = await submitCheckoutPayment(targetIntentId.trim(), {
-            payerAddress: payer,
+            paymentSecret: paymentSecret.trim(),
             network: selectedNetwork,
           })
 
@@ -320,14 +320,13 @@ console.log('Status:', cancelled.status) // 'cancelled'`
         return `import { submitCheckoutPayment } from '@/lib/payments/payment-checkout'
 
 const result = await submitCheckoutPayment('${targetIntentId || 'pi_example_id'}', {
-  payerAddress: '${account?.address || 'mn_wallet_address'}',
+  paymentSecret: '${paymentSecret || '64-hex-payment-secret-from-checkout-link'}',
   network: '${selectedNetwork}',
 })
 
 if (result.success) {
   console.log('Verified on Midnight network!')
 } else {
-  // If contract/prover endpoint is not yet connected:
   console.info(result.code, result.message)
 }`
 
@@ -683,22 +682,20 @@ console.log('Current status:', status)`
                   </div>
 
                   {activeMethod === 'submitCheckoutPayment' && (
-                    <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs space-y-2">
-                      <div className="flex items-center gap-1.5 text-amber-400 font-medium">
-                        <Wallet className="size-3.5" />
-                        <span>Payer Address Context</span>
-                      </div>
-                      <p className="text-muted-foreground leading-relaxed">
-                        {account?.address ? (
-                          <>
-                            Connected wallet address:{' '}
-                            <code className="text-foreground font-mono">{account.address}</code>
-                          </>
-                        ) : (
-                          <>
-                            No wallet extension connected. Payer address will default to explorer session identifier.
-                          </>
-                        )}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-foreground">
+                        Payment Secret (from checkout link)
+                      </label>
+                      <input
+                        type="text"
+                        value={paymentSecret}
+                        onChange={(e) => setPaymentSecret(e.target.value)}
+                        placeholder="64-character hex payment secret"
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-mono text-foreground focus:border-primary focus:outline-none"
+                      />
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        The one-time secret embedded in the customer checkout link fragment. It is
+                        proven to the contract — never revealed.
                       </p>
                     </div>
                   )}

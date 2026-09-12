@@ -56,12 +56,13 @@ export async function getCheckoutIntent(id: string): Promise<PaymentIntent> {
 
 /**
  * Client service to submit a customer payment against an active payment intent.
- * Calls the authoritative server endpoint which interfaces with the Midnight integration.
+ * The payment secret (from the checkout link fragment) is proven to the VeilPay
+ * contract; no wallet address or other payer identity is required.
  */
 export async function submitCheckoutPayment(
   intentId: string,
   payload: {
-    payerAddress: string
+    paymentSecret: string
     network?: string
   },
 ): Promise<PaySubmitResponse> {

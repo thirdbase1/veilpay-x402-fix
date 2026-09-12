@@ -19,7 +19,9 @@ export function PaymentIntentRowActions({
 }: PaymentIntentRowActionsProps) {
   const [copied, setCopied] = useState(false)
   const canCancel = intent.status === 'draft' || intent.status === 'awaiting_payment'
-  const checkoutUrl = getPaymentLink(intent.id)
+  // Chain-backed intents carry their one-time payment secret in the link
+  // fragment so the customer can satisfy the intent without a wallet.
+  const checkoutUrl = getPaymentLink(intent.id, undefined, intent.paymentSecret)
 
   const handleCopyLink = async () => {
     try {

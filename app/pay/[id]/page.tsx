@@ -6,7 +6,6 @@ import { getCheckoutIntent } from '@/lib/payments/payment-checkout'
 import { CheckoutHeader } from '@/components/checkout/checkout-header'
 import { CheckoutCard } from '@/components/checkout/checkout-card'
 import { CheckoutPrivacy } from '@/components/checkout/checkout-privacy'
-import { CheckoutWallet } from '@/components/checkout/checkout-wallet'
 import { CheckoutAction } from '@/components/checkout/checkout-action'
 import {
   CheckoutNotFound,
@@ -26,7 +25,6 @@ export default function CustomerPayPage({ params }: PageProps) {
   const [intent, setIntent] = useState<PaymentIntent | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [connectedAddress, setConnectedAddress] = useState<string | null>(null)
 
   // Polling ref to control interval cleanup on terminal states
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
@@ -94,14 +92,6 @@ export default function CustomerPayPage({ params }: PageProps) {
     }
   }, [intent?.status, loadIntent, intent])
 
-  const handleConnected = (address: string) => {
-    setConnectedAddress(address)
-  }
-
-  const handleDisconnected = () => {
-    setConnectedAddress(null)
-  }
-
   const handlePaymentSuccess = (updatedIntent: PaymentIntent) => {
     setIntent(updatedIntent)
   }
@@ -158,19 +148,8 @@ export default function CustomerPayPage({ params }: PageProps) {
               {/* Payment Request Card with Amount Centerpiece */}
               <CheckoutCard intent={intent} />
 
-              {/* Wallet Connection Section */}
-              <CheckoutWallet
-                connectedAddress={connectedAddress}
-                onConnected={handleConnected}
-                onDisconnected={handleDisconnected}
-              />
-
               {/* Payment Action & State Machine */}
-              <CheckoutAction
-                intent={intent}
-                connectedAddress={connectedAddress}
-                onPaymentSuccess={handlePaymentSuccess}
-              />
+              <CheckoutAction intent={intent} onPaymentSuccess={handlePaymentSuccess} />
             </>
           )}
 

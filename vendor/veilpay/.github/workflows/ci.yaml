@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Compact Compiler
+        uses: midnightntwrk/setup-compact-action@v1
+        with:
+          compact-version: '0.31.1'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile contract
+        working-directory: contract
+        run: npm run compact
+
+      - name: Typecheck and test contract
+        working-directory: contract
+        run: |
+          npm run typecheck
+          npm run test
+
+      - name: Build all packages
+        run: |
+          npm --workspace contract run build
+          npm --workspace api run build
+          npm --workspace cli run build
+
+      - name: Upload compiled contract assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: veilpay-managed
+          path: contract/src/managed
+          retention-days: 14
+
+      - name: Upload built packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: veilpay-dist
+          path: |
+            contract/dist
+            api/dist
+            cli/dist
+          retention-days: 14

@@ -27,6 +27,7 @@ const statusDisplay: Record<PaymentIntentStatus, string> = {
   expired: 'Expired',
   failed: 'Failed',
   cancelled: 'Cancelled',
+  refunded: 'Refunded',
 }
 
 export function PaymentLinkCard({

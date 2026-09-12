@@ -1,0 +1,193 @@
+// VeilPay Payment Intent Contract
+// Copyright (C) VeilPay
+// SPDX-License-Identifier: Apache-2.0
+//
+// A privacy-preserving payment protocol for the Midnight network.
+//
+//   - A merchant creates a payment intent (public: id, merchant, status;
+//     private: payer, exact amount paid).
+//   - A customer settles it by proving knowledge of a payment secret,
+//     without disclosing who they are.
+//   - The merchant can refund only against the verified payment, and only
+//     up to the amount the customer actually paid.
+//
+// The circuit enforces every business rule below. Off-chain code cannot
+// fake a verification because the ZK proof is checked by the network.
+
+pragma language_version >= 0.20;
+
+// NOTE: Compact has no transaction timestamp accessible to contracts.
+// `expiresAt` is therefore expressed in intent-operations: the number of
+// contract calls (createIntent/pay/refund/cancel) after which an unpaid
+// intent can no longer be settled. For a hackathon MVP this is a fine
+// proxy for liveness; production would use a slot-based oracle.
+
+import CompactStandardLibrary;
+
+// ─── Domain types ─────────────────────────────────────────────────
+
+export enum IntentStatus {
+  ACTIVE,
+  PAID,
+  REFUNDED,
+  CANCELLED
+}
+
+// A payment intent. Stored on the public ledger: anyone can look up a
+// receipt (status + amount) by id, but never who paid.
+export struct Intent {
+  merchantId: Bytes<32>,
+  amount: Uint<128>,
+  expiresAt: Uint<64>,
+  status: IntentStatus,
+  // Commitment to the payment secret. The secret itself only ever lives
+  // in the payer's private state.
+  secretCommitment: Bytes<32>,
+  // Running total verified as paid; refunds can never exceed this.
+  paidAmount: Uint<128>,
+  refundedAmount: Uint<128>
+}
+
+// ─── Public ledger state ──────────────────────────────────────────
+
+// Monotonic counter used both as the next intent id and as a per-intent
+// replay nonce inside the secret commitment.
+export ledger sequence: Counter;
+
+export ledger intents: Map<Uint<64>, Intent>;
+
+// ─── Private witness inputs ───────────────────────────────────────
+
+// Merchant's long-lived secret key. Identity is derived as H(sk), so the
+// merchant is authenticated without ever revealing an address.
+witness merchantSecretKey(): Bytes<32>;
+
+// The customer's payment secret for a given intent. Proving knowledge of
+// this value (and nothing else) is what settles a payment.
+witness paymentSecret(intentId: Uint<64>): Bytes<32>;
+
+// ─── Pure helpers ─────────────────────────────────────────────────
+
+// Pure (off-chain callable) identity derivation: H(domain || sk). The
+// impure circuits feed this the witness; the API calls it directly with
+// the private-state key to answer "is this intent mine?" without a proof.
+export circuit merchantIdentityOf(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "veilpay:merchant:"), sk]);
+}
+
+// Commitment binds the payment secret to one specific intent id, so a
+// secret can never pay two different intents.
+export circuit commitment(intentId: Uint<64>, secret: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([
+    pad(32, "veilpay:intent:"),
+    intentId as Field as Bytes<32>,
+    secret
+  ]);
+}
+
+// ─── Circuits ─────────────────────────────────────────────────────
+
+// Merchant creates a payment intent (a checkout request).
+// Returns the new intent id.
+export circuit createIntent(amount: Uint<128>, expiresAt: Uint<64>): Uint<64> {
+  assert(amount > 0, "amount must be positive");
+
+  sequence.increment(1);
+  const nextId = sequence;
+
+  intents.insert(disclose(nextId), disclose(Intent {
+    merchantId: merchantIdentityOf(merchantSecretKey()),
+    amount: amount,
+    expiresAt: expiresAt,
+    status: IntentStatus.ACTIVE,
+    secretCommitment: commitment(nextId, paymentSecret(nextId)),
+    paidAmount: 0 as Uint<128>,
+    refundedAmount: 0 as Uint<128>
+  }));
+
+  return nextId;
+}
+
+// Customer settles the intent: the circuit checks the payment secret
+// against the stored commitment and marks the intent paid. The payer's
+// identity is never written to public state.
+export circuit pay(intentId: Uint<64>): [] {
+  assert(intents.member(disclose(intentId)), "intent not found");
+  const intent = intents.lookup(disclose(intentId));
+  assert(intent.status == IntentStatus.ACTIVE, "intent not active");
+  const currentSeq = sequence;
+  assert(currentSeq <= intent.expiresAt, "intent expired");
+
+  assert(
+    commitment(intentId, paymentSecret(intentId)) == intent.secretCommitment,
+    "invalid payment secret"
+  );
+
+  sequence.increment(1);
+  intents.insert(disclose(intentId), Intent {
+    merchantId: intent.merchantId,
+    amount: intent.amount,
+    expiresAt: intent.expiresAt,
+    status: IntentStatus.PAID,
+    secretCommitment: intent.secretCommitment,
+    // Payment is single-shot (only ACTIVE intents can pay), so the verified
+    // paid total equals the intent amount exactly.
+    paidAmount: intent.amount,
+    refundedAmount: intent.refundedAmount
+  });
+}
+
+// Merchant refunds up to the verified paid amount. Still no payer
+// identity anywhere public.
+export circuit refund(intentId: Uint<64>, refundAmount: Uint<128>): [] {
+  assert(intents.member(disclose(intentId)), "intent not found");
+  const intent = intents.lookup(disclose(intentId));
+  assert(intent.merchantId == merchantIdentityOf(merchantSecretKey()), "not the intent merchant");
+  assert(intent.status == IntentStatus.PAID, "intent not paid");
+  assert(refundAmount > 0, "refund must be positive");
+  assert(refundAmount <= intent.paidAmount, "refund exceeds paid amount");
+
+  sequence.increment(1);
+  intents.insert(disclose(intentId), disclose(Intent {
+    merchantId: intent.merchantId,
+    amount: intent.amount,
+    expiresAt: intent.expiresAt,
+    status: IntentStatus.REFUNDED,
+    secretCommitment: intent.secretCommitment,
+    paidAmount: intent.paidAmount,
+    // refundAmount is a private circuit parameter; the receipt must state it
+    // publicly, so the whole struct is explicitly disclosed here.
+    refundedAmount: refundAmount,
+  }));
+}
+
+// Merchant cancels an unpaid intent (e.g. checkout abandoned).
+export circuit cancel(intentId: Uint<64>): [] {
+  assert(intents.member(disclose(intentId)), "intent not found");
+  const intent = intents.lookup(disclose(intentId));
+  assert(intent.merchantId == merchantIdentityOf(merchantSecretKey()), "not the intent merchant");
+  assert(intent.status == IntentStatus.ACTIVE, "intent not active");
+
+  sequence.increment(1);
+  intents.insert(disclose(intentId), Intent {
+    merchantId: intent.merchantId,
+    amount: intent.amount,
+    expiresAt: intent.expiresAt,
+    status: IntentStatus.CANCELLED,
+    secretCommitment: intent.secretCommitment,
+    paidAmount: intent.paidAmount,
+    refundedAmount: intent.refundedAmount
+  });
+}
+
+// ─── Queries ──────────────────────────────────────────────────────
+
+// Public verification endpoint: was this intent settled? Used by the
+// /verify/[id] page. Returns false (not revert) for unknown ids.
+export circuit isPaid(intentId: Uint<64>): Boolean {
+  if (intents.member(disclose(intentId))) {
+    const status = intents.lookup(disclose(intentId)).status;
+    return status == IntentStatus.PAID || status == IntentStatus.REFUNDED;
+  }
+  return false;
+}

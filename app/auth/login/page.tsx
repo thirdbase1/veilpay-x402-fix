@@ -165,34 +165,6 @@ function LoginForm() {
           )}
         </button>
 
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-border/60" />
-          </div>
-          <div className="relative flex justify-center text-[10px] uppercase font-mono text-muted-foreground">
-            <span className="bg-card px-2">or quick evaluation</span>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={async () => {
-            setErrorMessage(null)
-            try {
-              const res = await fetch('/api/auth/demo-session', { method: 'POST' })
-              const data = await res.json()
-              if (!res.ok) throw new Error(data.error || 'Demo sign in failed')
-              router.push('/app')
-              router.refresh()
-            } catch (err: unknown) {
-              setErrorMessage(err instanceof Error ? err.message : 'Demo sign in failed')
-            }
-          }}
-          className="w-full flex items-center justify-center gap-2 rounded-lg border border-border/80 bg-secondary/80 py-2.5 px-4 text-xs font-semibold text-foreground hover:bg-secondary transition-colors"
-        >
-          <span>Continue as Demo Merchant</span>
-          <ArrowRight className="size-3.5 text-muted-foreground" />
-        </button>
       </form>
 
       <div className="mt-6 pt-5 border-t border-border/50 text-center">

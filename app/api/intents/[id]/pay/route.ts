@@ -1,18 +1,23 @@
 import { NextResponse } from 'next/server'
-import {
-  getServerIntent,
-  updateServerIntentStatus,
-} from '@/lib/payments/server-store'
-import { getMidnightClient } from '@/lib/midnight/client'
 import { createClient } from '@/lib/supabase/server'
 import { recordActivityEvent } from '@/lib/payments/activity'
-import { isValidIntentId, isValidAddress } from '@/lib/payments/intent'
-import type { PaymentIntent, PaymentIntentStatus } from '@/lib/payments/types'
+import { isValidIntentId } from '@/lib/payments/intent'
+import type { PaymentIntentStatus } from '@/lib/payments/types'
+import {
+  getVeilPayAPI,
+  getVeilPayReadiness,
+  getChainIntent,
+  mapChainStatusToAppStatus,
+  isValidPaymentSecretHex,
+  secretToBytes,
+  VeilPayUnavailableError,
+} from '@/lib/veilpay-server'
 
 export const dynamic = 'force-dynamic'
 
 interface PayRequestBody {
-  payerAddress?: string
+  /** 32-byte payment secret from the checkout link fragment (hex encoded). */
+  paymentSecret?: string
   network?: string
 }
 
@@ -30,7 +35,7 @@ export async function POST(
       )
     }
 
-    // 1. Fetch intent from Supabase first
+    // 1. Load the authoritative intent record
     const supabase = await createClient()
     const { data: dbIntent } = await supabase
       .from('payment_intents')
@@ -38,52 +43,93 @@ export async function POST(
       .eq('id', id)
       .maybeSingle()
 
-    let currentStatus: PaymentIntentStatus = 'awaiting_payment'
-    let expiresAt: string | undefined = undefined
-    let authUserId: string | null = null
-
-    if (dbIntent) {
-      currentStatus = dbIntent.status as PaymentIntentStatus
-      expiresAt = dbIntent.expires_at ?? undefined
-      authUserId = dbIntent.auth_user_id
-    } else {
-      const memIntent = getServerIntent(id)
-      if (!memIntent) {
-        return NextResponse.json(
-          { success: false, error: 'Payment intent not found in protocol registry' },
-          { status: 404 },
-        )
-      }
-      currentStatus = memIntent.status
-      expiresAt = memIntent.conditions.expiresAt
+    if (!dbIntent) {
+      return NextResponse.json(
+        { success: false, error: 'Payment intent not found in protocol registry' },
+        { status: 404 },
+      )
     }
 
-    // 2. Check expiration
-    if (
-      currentStatus === 'expired' ||
-      (expiresAt && new Date(expiresAt).getTime() <= Date.now())
-    ) {
-      if (dbIntent) {
-        await supabase
-          .from('payment_intents')
-          .update({ status: 'expired', updated_at: new Date().toISOString() })
-          .eq('id', id)
-      }
-      updateServerIntentStatus(id, 'expired')
+    const meta = (dbIntent.metadata ?? {}) as {
+      chainIntentId?: string
+      paymentSecret?: string
+      expiresAtOps?: string
+    }
 
+    if (!meta.chainIntentId) {
       return NextResponse.json(
         {
           success: false,
-          status: 'expired',
-          code: 'INTENT_EXPIRED',
-          error: 'This payment intent has expired and can no longer be satisfied.',
+          error:
+            'This payment intent is not registered on the VeilPay contract and cannot be paid.',
         },
         { status: 409 },
       )
     }
 
-    // 3. Check cancellation
-    if (currentStatus === 'cancelled') {
+    // 2. The payment secret is the payer's credential — required, no wallet address.
+    const body: PayRequestBody = await request.json().catch(() => ({}))
+    const paymentSecret = body.paymentSecret?.trim()
+
+    if (!isValidPaymentSecretHex(paymentSecret)) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'PAYMENT_SECRET_REQUIRED',
+          error:
+            'A valid 32-byte payment secret (64 hex characters) from the checkout link is required.',
+        },
+        { status: 400 },
+      )
+    }
+
+    // 3. Protocol stack must be ready
+    const readiness = getVeilPayReadiness()
+    if (!readiness.ready) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'VEILPAY_NOT_CONFIGURED',
+          message: 'VeilPay protocol integration is not ready.',
+          missingCapabilities: readiness.missing,
+        },
+        { status: 503 },
+      )
+    }
+
+    const api = await getVeilPayAPI()
+    const chainId = BigInt(meta.chainIntentId)
+
+    // 4. Read authoritative on-chain state before paying
+    const before = await getChainIntent(api, meta.chainIntentId)
+    if (!before) {
+      return NextResponse.json(
+        { success: false, error: 'Intent not found in the VeilPay contract ledger.' },
+        { status: 404 },
+      )
+    }
+
+    if (before.status === 'PAID' || before.status === 'REFUNDED') {
+      const now = new Date().toISOString()
+      await supabase
+        .from('payment_intents')
+        .update({ status: 'verified', updated_at: now })
+        .eq('id', id)
+
+      return NextResponse.json({
+        success: true,
+        status: 'verified',
+        code: 'ALREADY_VERIFIED',
+        message: 'Payment intent has already been satisfied on-chain.',
+      })
+    }
+
+    if (before.status === 'CANCELLED') {
+      await supabase
+        .from('payment_intents')
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .eq('id', id)
+
       return NextResponse.json(
         {
           success: false,
@@ -95,135 +141,61 @@ export async function POST(
       )
     }
 
-    // 4. Check if already verified
-    if (currentStatus === 'verified') {
-      return NextResponse.json(
-        {
-          success: true,
-          status: 'verified',
-          code: 'ALREADY_VERIFIED',
-          message: 'Payment intent has already been verified.',
-        },
-        { status: 200 },
-      )
-    }
+    // 5. Submit the real pay circuit call through the authenticated gateway
+    await api.pay(chainId, secretToBytes(paymentSecret))
 
-    // 5. Check if failed
-    if (currentStatus === 'failed') {
+    // 6. Confirm settlement from the ledger
+    const after = await getChainIntent(api, meta.chainIntentId)
+    const settled = after?.status === 'PAID' || after?.status === 'REFUNDED'
+
+    if (!settled) {
       return NextResponse.json(
         {
           success: false,
-          status: 'failed',
-          code: 'INTENT_FAILED',
-          error: 'Payment intent has failed and cannot be paid.',
-        },
-        { status: 409 },
-      )
-    }
-
-    // 6. Parse and validate payer address
-    const body: PayRequestBody = await request.json().catch(() => ({}))
-    const payerAddress = body.payerAddress?.trim()
-
-    if (!payerAddress || !isValidAddress(payerAddress)) {
-      return NextResponse.json(
-        {
-          success: false,
-          status: currentStatus,
-          code: 'WALLET_REQUIRED',
-          error: 'A valid connected payer account address is required (8-128 alphanumeric characters).',
-        },
-        { status: 400 },
-      )
-    }
-
-    // 7. Delegate to Midnight client boundary
-    const midnight = getMidnightClient()
-
-    if (!midnight.ready) {
-      // Truthful protocol state: the repository does not have a deployed contract
-      return NextResponse.json(
-        {
-          success: false,
-          status: currentStatus,
-          code: 'MIDNIGHT_INTEGRATION_PENDING',
-          message:
-            'Midnight contract & proof-server integration is pending. Real ZK proof generation and contract verification will execute once contract addresses and proving keys are deployed.',
-          missingCapabilities: [
-            'NEXT_PUBLIC_MIDNIGHT_CONTRACT_ADDRESS: Deployed Compact contract address on Midnight network',
-            'MIDNIGHT_PROOF_SERVER_URL: Local or remote prover endpoint for generating ZK proofs',
-            'MIDNIGHT_INDEXER_RPC_URL: RPC endpoint to verify on-chain ledger state',
-          ],
-        },
-        { status: 503 },
-      )
-    }
-
-    // If client is ready, update state to verifying and execute real verification
-    if (dbIntent) {
-      await supabase
-        .from('payment_intents')
-        .update({ status: 'verifying', updated_at: new Date().toISOString() })
-        .eq('id', id)
-    }
-    updateServerIntentStatus(id, 'verifying')
-
-    const verificationResult = await midnight.verify(id)
-
-    if (verificationResult.satisfied) {
-      const now = new Date().toISOString()
-      if (dbIntent) {
-        await supabase
-          .from('payment_intents')
-          .update({ status: 'verified', updated_at: now })
-          .eq('id', id)
-
-        if (authUserId) {
-          await recordActivityEvent({
-            authUserId,
-            intentId: id,
-            eventType: 'PAYMENT_VERIFIED',
-            title: 'Payment Verified',
-            description: `Payment intent ${id} was verified on-chain.`,
-            metadata: {
-              payerAddress,
-              network: body.network || 'midnight-testnet',
-            },
-          })
-        }
-      }
-      const verifiedIntent = updateServerIntentStatus(id, 'verified')
-
-      return NextResponse.json({
-        success: true,
-        status: 'verified',
-        intent: verifiedIntent,
-        verificationResult,
-      })
-    } else {
-      if (dbIntent) {
-        await supabase
-          .from('payment_intents')
-          .update({ status: 'failed', updated_at: new Date().toISOString() })
-          .eq('id', id)
-      }
-      const failedIntent = updateServerIntentStatus(id, 'failed')
-
-      return NextResponse.json(
-        {
-          success: false,
-          status: 'failed',
-          intent: failedIntent,
-          error: 'Zero-knowledge verification failed: Payment conditions were not satisfied.',
+          status: 'awaiting_payment',
+          code: 'PAYMENT_NOT_SETTLED',
+          error:
+            'The pay transaction did not settle. Check the payment secret and try again.',
         },
         { status: 422 },
       )
     }
+
+    // 7. Persist verified state and activity
+    const now = new Date().toISOString()
+    await supabase
+      .from('payment_intents')
+      .update({ status: 'verified', updated_at: now })
+      .eq('id', id)
+
+    if (dbIntent.auth_user_id) {
+      await recordActivityEvent({
+        authUserId: dbIntent.auth_user_id,
+        intentId: id,
+        eventType: 'PAYMENT_VERIFIED',
+        title: 'Payment Verified',
+        description: `Payment intent ${id} (chain #${meta.chainIntentId}) was verified on-chain.`,
+        metadata: {
+          chainIntentId: meta.chainIntentId,
+          network: body.network || 'midnight-preprod',
+        },
+      })
+    }
+
+    return NextResponse.json({
+      success: true,
+      status: 'verified' as PaymentIntentStatus,
+      chainIntentId: meta.chainIntentId,
+      message: 'Payment verified against the VeilPay contract.',
+    })
   } catch (err: unknown) {
+    if (err instanceof VeilPayUnavailableError) {
+      return NextResponse.json(
+        { success: false, error: err.message, missingCapabilities: err.missing },
+        { status: 503 },
+      )
+    }
     const message = err instanceof Error ? err.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 },
-    )
+    return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }

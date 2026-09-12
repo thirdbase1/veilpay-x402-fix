@@ -86,6 +86,16 @@ export function PaymentIntentStatusBadge({ status, className = '' }: StatusBadge
         </span>
       )
 
+    case 'refunded':
+      return (
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-950/30 px-2.5 py-0.5 font-mono text-[11px] font-medium text-violet-300 ${className}`}
+        >
+          <RefreshCw className="size-3 text-violet-400" />
+          Refunded
+        </span>
+      )
+
     default:
       return (
         <span className="font-mono text-xs text-muted-foreground">

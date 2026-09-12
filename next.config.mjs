@@ -6,6 +6,12 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // The VeilPay protocol workspaces (vendor/veilpay) are loaded at runtime via
+  // a dynamic import that bypasses the bundler, so they must be traced into
+  // the server output for production deployments.
+  outputFileTracingIncludes: {
+    '/api/**/*': ['./vendor/veilpay/**/*'],
+  },
   async headers() {
     return [
       {

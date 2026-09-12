@@ -3,6 +3,12 @@ import { getServerIntent } from '@/lib/payments/server-store'
 import { createClient } from '@/lib/supabase/server'
 import type { PaymentIntent, PaymentIntentStatus } from '@/lib/payments/types'
 import { isValidIntentId } from '@/lib/payments/intent'
+import {
+  getVeilPayAPI,
+  getVeilPayReadiness,
+  getChainIntent,
+  mapChainStatusToAppStatus,
+} from '@/lib/veilpay-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -70,6 +76,33 @@ export async function GET(
           .eq('id', id)
       }
 
+      const meta = (row.metadata ?? {}) as {
+        chainIntentId?: string
+        paymentSecret?: string
+        expiresAtOps?: string
+      }
+
+      // Chain-backed intents: the contract ledger is authoritative. Sync the
+      // local status from the on-chain state when the protocol stack is ready.
+      if (meta.chainIntentId && getVeilPayReadiness().ready) {
+        try {
+          const api = await getVeilPayAPI()
+          const chainIntent = await getChainIntent(api, meta.chainIntentId)
+          if (chainIntent) {
+            const chainStatus = mapChainStatusToAppStatus(chainIntent.status) as PaymentIntentStatus
+            if (chainStatus !== status) {
+              status = chainStatus
+              await supabase
+                .from('payment_intents')
+                .update({ status: chainStatus, updated_at: new Date().toISOString() })
+                .eq('id', id)
+            }
+          }
+        } catch (chainErr) {
+          console.error('[VeilPay] Chain status sync failed:', chainErr)
+        }
+      }
+
       intent = {
         id: row.id,
         network: row.network,
@@ -88,6 +121,9 @@ export async function GET(
         createdAt: row.created_at,
         updatedAt: row.updated_at,
         onChainReference: row.reference ?? undefined,
+        chainIntentId: meta.chainIntentId,
+        paymentSecret: meta.paymentSecret,
+        expiresAtOps: meta.expiresAtOps,
       }
     } else {
       // Fallback to local server store

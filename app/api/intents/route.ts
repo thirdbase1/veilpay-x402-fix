@@ -1,15 +1,21 @@
 import { NextResponse } from 'next/server'
 import {
-  listServerIntents,
   saveServerIntent,
-  getServerIntent,
 } from '@/lib/payments/server-store'
 import {
   validateConditions,
   buildDraftIntent,
   isValidIntentId,
+  parseDecimalToMicroUnits,
 } from '@/lib/payments/intent'
-import { getMidnightClient } from '@/lib/midnight/client'
+import {
+  getVeilPayAPI,
+  getVeilPayReadiness,
+  getLedgerSequence,
+  generatePaymentSecret,
+  secretToBytes,
+  VeilPayUnavailableError,
+} from '@/lib/veilpay-server'
 import { midnightPublicConfig } from '@/lib/config'
 import type { PaymentConditions, PaymentIntent, PaymentIntentStatus } from '@/lib/payments/types'
 import { createClient } from '@/lib/supabase/server'
@@ -144,6 +150,12 @@ export async function GET(request: Request) {
         currentStatus = 'expired'
       }
 
+      const meta = (row.metadata ?? {}) as {
+        chainIntentId?: string
+        paymentSecret?: string
+        expiresAtOps?: string
+      }
+
       return {
         id: row.id,
         network: row.network,
@@ -162,6 +174,9 @@ export async function GET(request: Request) {
         createdAt: row.created_at,
         updatedAt: row.updated_at,
         onChainReference: row.reference ?? undefined,
+        chainIntentId: meta.chainIntentId,
+        paymentSecret: meta.paymentSecret,
+        expiresAtOps: meta.expiresAtOps,
       }
     })
 
@@ -258,28 +273,52 @@ export async function POST(request: Request) {
       }
     }
 
+    // Real on-chain intent creation through the VeilPay contract.
+    const readiness = getVeilPayReadiness()
+    if (!readiness.ready) {
+      return NextResponse.json(
+        {
+          error: 'VeilPay protocol integration is not ready.',
+          missingCapabilities: readiness.missing,
+        },
+        { status: 503 },
+      )
+    }
+
+    const amountMicro = parseDecimalToMicroUnits(conditions.amount.amount)
+    if (amountMicro === null || amountMicro <= BigInt(0)) {
+      return NextResponse.json(
+        { error: 'Amount must be a positive decimal number with at most 6 decimal places.' },
+        { status: 400 },
+      )
+    }
+
+    // TTL is expressed in ledger operations (contract semantics), not wall-clock.
+    const rawTtl = typeof body.ttlOps === 'number' ? body.ttlOps : 50
+    const ttlOps = Math.min(1000, Math.max(10, Math.floor(rawTtl)))
+
+    const api = await getVeilPayAPI()
+    const sequence = await getLedgerSequence(api)
+    const expiresAtOps = sequence + ttlOps
+    const paymentSecret = generatePaymentSecret()
+
+    const chainIntentId = await api.createIntent(
+      amountMicro,
+      expiresAtOps,
+      secretToBytes(paymentSecret),
+    )
+
     // Assemble the authoritative typed intent
     const intentId = idempotencyKey && isValidIntentId(idempotencyKey) ? idempotencyKey : undefined
     const draft = buildDraftIntent(conditions, {
       id: intentId,
-      network: midnightPublicConfig.network || 'midnight-testnet',
+      network: midnightPublicConfig.network || 'midnight-preprod',
     })
-
-    const midnightClient = getMidnightClient()
-    let midnightStatus: 'published' | 'integration_pending' = 'integration_pending'
-
-    if (midnightClient.ready) {
-      try {
-        const onChain = await midnightClient.createIntent(draft)
-        draft.status = onChain.status
-        draft.onChainReference = onChain.onChainReference
-        midnightStatus = 'published'
-      } catch (chainErr) {
-        console.error('[VeilPay] Midnight registration error:', chainErr)
-      }
-    } else {
-      draft.status = 'awaiting_payment'
-    }
+    draft.status = 'awaiting_payment'
+    draft.chainIntentId = chainIntentId.toString()
+    draft.paymentSecret = paymentSecret
+    draft.expiresAtOps = expiresAtOps.toString()
+    draft.onChainReference = `veilpay:${readiness.contractAddress}:${chainIntentId.toString()}`
 
     // Fetch the merchant profile owned by user
     const { data: profile } = await supabase
@@ -293,7 +332,7 @@ export async function POST(request: Request) {
       id: draft.id,
       merchant_id: profile?.id ?? null,
       auth_user_id: user.id,
-      network: draft.network || midnightPublicConfig.network || 'midnight-testnet',
+      network: draft.network || midnightPublicConfig.network || 'midnight-preprod',
       status: draft.status,
       amount_kind: draft.conditions.amount.kind,
       asset: draft.conditions.amount.asset,
@@ -302,7 +341,12 @@ export async function POST(request: Request) {
       recipient: draft.conditions.recipient,
       expires_at: draft.conditions.expiresAt ?? null,
       reference: draft.conditions.reference ?? null,
-      metadata: {},
+      metadata: {
+        chainIntentId: draft.chainIntentId,
+        paymentSecret,
+        ttlOps,
+        expiresAtOps: draft.expiresAtOps,
+      },
       created_at: draft.createdAt,
       updated_at: draft.updatedAt ?? draft.createdAt,
     })
@@ -324,24 +368,35 @@ export async function POST(request: Request) {
       intentId: draft.id,
       eventType: 'PAYMENT_INTENT_CREATED',
       title: 'Payment Intent Created',
-      description: `Created payment intent for ${draft.conditions.amount.amount} ${draft.conditions.amount.asset}`,
+      description: `Created on-chain payment intent #${draft.chainIntentId} for ${draft.conditions.amount.amount} ${draft.conditions.amount.asset}`,
       metadata: {
         amount: draft.conditions.amount.amount,
         asset: draft.conditions.amount.asset,
         recipient: draft.conditions.recipient,
         reference: draft.conditions.reference || null,
+        chainIntentId: draft.chainIntentId,
       },
     })
 
     return NextResponse.json(
       {
         intent: draft,
-        midnightStatus,
-        note: 'Saved in protocol intent store. Midnight contract integration boundary ready.',
+        midnightStatus: 'published',
+        chainIntentId: draft.chainIntentId,
+        // The secret is returned exactly once so the merchant can embed it in
+        // the checkout link; it is also persisted in the intent metadata.
+        paymentSecret,
+        note: 'Intent registered on the VeilPay contract via the authenticated gateway.',
       },
       { status: 201 },
     )
   } catch (err: unknown) {
+    if (err instanceof VeilPayUnavailableError) {
+      return NextResponse.json(
+        { error: err.message, missingCapabilities: err.missing },
+        { status: 503 },
+      )
+    }
     const message = err instanceof Error ? err.message : 'Failed to create intent'
     return NextResponse.json({ error: message }, { status: 500 })
   }

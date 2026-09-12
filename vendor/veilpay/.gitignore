@@ -1,0 +1,10 @@
+node_modules/
+dist/
+src/managed/
+**/src/managed/
+*.log
+logs/
+.env
+.veilpay-state/
+midnight-level-db/
+*.tgz

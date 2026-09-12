@@ -31,13 +31,19 @@ export async function cancelPaymentIntent(id: string): Promise<PaymentIntent> {
   return cancelPaymentIntentApi(id)
 }
 
-export function getPaymentLink(id: string, origin?: string): string {
+/**
+ * Build the customer checkout link. When a payment secret is supplied it is
+ * carried in the URL fragment (`#ps=`), which browsers never send to servers —
+ * keeping the secret out of access logs while still reaching the payer.
+ */
+export function getPaymentLink(id: string, origin?: string, paymentSecret?: string): string {
   const path = `/pay/${encodeURIComponent(id)}`
+  const fragment = paymentSecret ? `#ps=${encodeURIComponent(paymentSecret)}` : ''
   if (origin) {
-    return `${origin.replace(/\/$/, '')}${path}`
+    return `${origin.replace(/\/$/, '')}${path}${fragment}`
   }
   if (typeof window !== 'undefined') {
-    return `${window.location.origin}${path}`
+    return `${window.location.origin}${path}${fragment}`
   }
   return path
 }

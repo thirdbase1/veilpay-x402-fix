@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { PaymentIntent } from '@/lib/payments/types'
 import {
   type CheckoutFlowState,
@@ -14,27 +14,45 @@ import {
   CheckCircle2,
   RefreshCw,
   ExternalLink,
+  KeyRound,
 } from 'lucide-react'
 
 interface CheckoutActionProps {
   intent: PaymentIntent
-  connectedAddress: string | null
   onPaymentSuccess: (updatedIntent: PaymentIntent) => void
+}
+
+/**
+ * Read the one-time payment secret from the checkout link fragment (#ps=...).
+ * Fragments are never sent to the server, so the secret stays out of logs.
+ */
+function readSecretFromLink(): string | null {
+  if (typeof window === 'undefined') return null
+  const hash = window.location.hash
+  if (!hash.startsWith('#ps=')) return null
+  const secret = decodeURIComponent(hash.slice(4)).trim()
+  return /^[0-9a-fA-F]{64}$/.test(secret) ? secret : null
 }
 
 export function CheckoutAction({
   intent,
-  connectedAddress,
   onPaymentSuccess,
 }: CheckoutActionProps) {
   const [flowState, setFlowState] = useState<CheckoutFlowState>('IDLE')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [pendingCapabilities, setPendingCapabilities] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [paymentSecret, setPaymentSecret] = useState<string | null>(null)
+
+  useEffect(() => {
+    setPaymentSecret(readSecretFromLink())
+  }, [])
 
   const handlePay = async () => {
-    if (!connectedAddress) {
-      setErrorMessage('Please connect your Midnight wallet first.')
+    if (!paymentSecret) {
+      setErrorMessage(
+        'This checkout link is missing its payment secret. Ask the merchant for a complete payment link.',
+      )
       return
     }
 
@@ -49,23 +67,19 @@ export function CheckoutAction({
       // Step 1: Preparing Payment
       setFlowState('PREPARING_PAYMENT')
 
-      // Step 2: Awaiting Wallet Approval & Submitting
-      setFlowState('AWAITING_WALLET_APPROVAL')
-
-      // Real protocol submission to authoritative server endpoint
+      // Step 2: Submitting the pay circuit call through the VeilPay gateway
       setFlowState('SUBMITTING_PAYMENT')
       const response = await submitCheckoutPayment(intent.id, {
-        payerAddress: connectedAddress,
+        paymentSecret,
         network: intent.network,
       })
 
       if (response.success && response.status === 'verified' && response.intent) {
         setFlowState('VERIFIED')
         onPaymentSuccess(response.intent)
-      } else if (response.code === 'MIDNIGHT_INTEGRATION_PENDING') {
-        // Honest protocol state: Midnight contract and proof server are in pending integration
+      } else if (response.code === 'VEILPAY_NOT_CONFIGURED') {
         setFlowState('INTEGRATION_PENDING')
-        setErrorMessage(response.message || 'Midnight contract and proof-server integration is pending.')
+        setErrorMessage(response.message || 'VeilPay protocol integration is not ready.')
         setPendingCapabilities(response.missingCapabilities || [])
       } else if (response.code === 'ALREADY_VERIFIED') {
         setFlowState('VERIFIED')
@@ -105,6 +119,8 @@ export function CheckoutAction({
     )
   }
 
+  const missingSecret = !paymentSecret
+
   return (
     <div className="space-y-4">
       {/* Live State Tracker (when interacting) */}
@@ -118,8 +134,7 @@ export function CheckoutAction({
             <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
             <span className="font-mono text-xs font-semibold text-foreground">
               {flowState === 'PREPARING_PAYMENT' && 'Preparing private payment conditions...'}
-              {flowState === 'AWAITING_WALLET_APPROVAL' && 'Awaiting approval in Midnight wallet...'}
-              {flowState === 'SUBMITTING_PAYMENT' && 'Submitting payment intent to Midnight protocol...'}
+              {flowState === 'SUBMITTING_PAYMENT' && 'Submitting payment to the VeilPay contract...'}
               {flowState === 'GENERATING_PROOF' && 'Generating zero-knowledge verification proof...'}
               {flowState === 'VERIFYING_PAYMENT' && 'Verifying payment against contract conditions...'}
             </span>
@@ -130,11 +145,25 @@ export function CheckoutAction({
         </div>
       )}
 
+      {/* Missing secret notice */}
+      {missingSecret && (
+        <div
+          role="alert"
+          className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 text-xs text-amber-200"
+        >
+          <KeyRound className="size-4 text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
+          <p className="leading-relaxed">
+            This link does not contain the payment secret required to satisfy the intent.
+            Request a complete payment link from the merchant.
+          </p>
+        </div>
+      )}
+
       {/* Main Pay Action Button */}
       <button
         type="button"
         onClick={handlePay}
-        disabled={!connectedAddress || isSubmitting}
+        disabled={missingSecret || isSubmitting}
         className="w-full inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {isSubmitting ? (
@@ -150,9 +179,9 @@ export function CheckoutAction({
         )}
       </button>
 
-      {!connectedAddress && (
+      {!missingSecret && (
         <p className="text-center font-mono text-[11px] text-muted-foreground">
-          Connect your Midnight wallet above to unlock payment.
+          Your payment secret is proven to the contract — never revealed.
         </p>
       )}
 
@@ -167,7 +196,7 @@ export function CheckoutAction({
             <Info className="size-4 text-primary shrink-0 mt-0.5" aria-hidden="true" />
             <div className="space-y-1">
               <h4 className="font-mono text-xs font-semibold text-foreground">
-                Midnight Protocol Integration Pending
+                VeilPay Protocol Not Configured
               </h4>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {errorMessage}
@@ -216,14 +245,16 @@ export function CheckoutAction({
           </div>
           <p className="text-[11px] text-rose-300/90 leading-relaxed">{errorMessage}</p>
 
-          <button
-            type="button"
-            onClick={handlePay}
-            className="inline-flex items-center gap-1.5 font-mono text-[11px] text-rose-300 hover:text-white underline pt-1"
-          >
-            <RefreshCw className="size-3" aria-hidden="true" />
-            <span>Try Again</span>
-          </button>
+          {!missingSecret && (
+            <button
+              type="button"
+              onClick={handlePay}
+              className="inline-flex items-center gap-1.5 font-mono text-[11px] text-rose-300 hover:text-white underline pt-1"
+            >
+              <RefreshCw className="size-3" aria-hidden="true" />
+              <span>Try Again</span>
+            </button>
+          )}
         </div>
       )}
     </div>

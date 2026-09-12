@@ -7,6 +7,11 @@ import { createClient } from '@/lib/supabase/server'
 import type { PaymentIntent, PaymentIntentStatus } from '@/lib/payments/types'
 import { recordActivityEvent } from '@/lib/payments/activity'
 import { isValidIntentId } from '@/lib/payments/intent'
+import {
+  getVeilPayAPI,
+  getVeilPayReadiness,
+  VeilPayUnavailableError,
+} from '@/lib/veilpay-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -85,6 +90,37 @@ export async function POST(
         { error: 'Cannot cancel a failed payment intent.' },
         { status: 409 },
       )
+    }
+
+    // Chain-backed intents must also be cancelled on the VeilPay contract.
+    const meta = (dbIntent.metadata ?? {}) as { chainIntentId?: string }
+    if (meta.chainIntentId) {
+      const readiness = getVeilPayReadiness()
+      if (!readiness.ready) {
+        return NextResponse.json(
+          {
+            error: 'VeilPay protocol integration is not ready.',
+            missingCapabilities: readiness.missing,
+          },
+          { status: 503 },
+        )
+      }
+      try {
+        const api = await getVeilPayAPI()
+        await api.cancel(BigInt(meta.chainIntentId))
+      } catch (chainErr) {
+        if (chainErr instanceof VeilPayUnavailableError) {
+          return NextResponse.json(
+            { error: chainErr.message, missingCapabilities: chainErr.missing },
+            { status: 503 },
+          )
+        }
+        console.error('[VeilPay] On-chain cancel failed:', chainErr)
+        return NextResponse.json(
+          { error: 'On-chain cancellation failed. The intent was not cancelled.' },
+          { status: 502 },
+        )
+      }
     }
 
     const now = new Date().toISOString()

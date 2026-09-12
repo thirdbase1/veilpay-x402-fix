@@ -56,6 +56,7 @@ export type PaymentIntentStatus =
   | 'expired'
   | 'failed'
   | 'cancelled'
+  | 'refunded'
 
 export interface PaymentIntent {
   /** Stable identifier for the intent (e.g. pi_...). */
@@ -68,6 +69,16 @@ export interface PaymentIntent {
   network?: string
   /** Optional transaction hash or on-chain registration reference once submitted to Midnight. */
   onChainReference?: string
+  /** On-chain intent id inside the VeilPay contract ledger (chain-backed intents only). */
+  chainIntentId?: string
+  /**
+   * One-time payment secret for chain-backed intents. Only ever surfaced to the
+   * authenticated merchant so it can be embedded in the checkout link fragment;
+   * the customer proves knowledge of it to satisfy the intent.
+   */
+  paymentSecret?: string
+  /** Operation-counter TTL anchored at creation (chain-backed intents only). */
+  expiresAtOps?: string
 }
 
 /**
