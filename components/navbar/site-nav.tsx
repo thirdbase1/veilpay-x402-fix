@@ -2,16 +2,15 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { Menu, X, ArrowUpRight, User } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { Wordmark } from '@/components/site/brand'
 import { cn } from '@/lib/utils'
 import { primaryNav, utilityNav } from './nav-links'
-import { createClient } from '@/lib/supabase/client'
+import { OneAmWalletButton } from '@/components/wallet/oneam-wallet-button'
 
 export function SiteNav() {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -26,21 +25,6 @@ export function SiteNav() {
       document.body.style.overflow = ''
     }
   }, [open])
-
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const supabase = createClient()
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-        setIsAuthenticated(!!session)
-      } catch {
-        setIsAuthenticated(false)
-      }
-    }
-    checkAuth()
-  }, [])
 
   return (
     <header
@@ -91,23 +75,7 @@ export function SiteNav() {
             {utilityNav.sdk.label}
           </Link>
 
-          {isAuthenticated ? (
-            <Link
-              href="/app"
-              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <span>Merchant Console</span>
-              <ArrowUpRight className="size-4" />
-            </Link>
-          ) : (
-            <Link
-              href="/auth/login"
-              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <span>Connect Wallet</span>
-              <ArrowUpRight className="size-4" />
-            </Link>
-          )}
+          <OneAmWalletButton />
         </div>
 
         <button
@@ -155,25 +123,7 @@ export function SiteNav() {
             >
               {utilityNav.sdk.label}
             </Link>
-            {isAuthenticated ? (
-              <Link
-                href="/app"
-                onClick={() => setOpen(false)}
-                className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <span>Merchant Console</span>
-                <ArrowUpRight className="size-4" />
-              </Link>
-            ) : (
-              <Link
-                href="/auth/login"
-                onClick={() => setOpen(false)}
-                className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-              >
-                <span>Connect Wallet</span>
-                <ArrowUpRight className="size-4" />
-              </Link>
-            )}
+            <OneAmWalletButton className="w-full justify-center" />
           </div>
         </div>
       )}
