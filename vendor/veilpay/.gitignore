@@ -1,7 +1,14 @@
 node_modules/
 dist/
-src/managed/
-**/src/managed/
+**/src/managed/**
+!**/src/managed/**/
+!**/src/managed/**/index.js
+!**/src/managed/**/index.js.map
+!**/src/managed/**/index.d.ts
+!**/src/managed/**/contract-info.json
+!**/src/managed/**/*.bzkir
+!**/src/managed/**/*.zkir
+!**/src/managed/**/*.verifier
 *.log
 logs/
 .env

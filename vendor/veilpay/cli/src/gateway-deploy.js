@@ -15,7 +15,7 @@ import { buildGatewayStack, ADDRESS_FILE, STATE_DIR } from './gateway-stack.js';
 export const runGatewayDeploy = async () => {
     const logger = await createLogger(path.resolve(STATE_DIR, '..', 'logs', 'preprod', `gateway-${new Date().toISOString().slice(0, 10)}.log`));
     logger.info('deploying VeilPay through the sponsored gateway (no faucet, no sync)');
-    const { providers, session, close } = await buildGatewayStack(logger);
+    const { providers, session, close } = await buildGatewayStack(logger, { version: 'v1' });
     try {
         const api = await VeilPayAPI.deploy(providers, logger);
         fs.mkdirSync(STATE_DIR, { recursive: true });

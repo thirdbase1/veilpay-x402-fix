@@ -1,0 +1,42 @@
+{
+  "protocol": "veilpay",
+  "version": "v1-oracle",
+  "network": "midnight-preprod",
+  "contractAddress": "0x304666ce3bb47edab2267a88eb650330042e1d6b1bea347d8f391b3fd09d719f",
+  "deploymentTx": "0x1efb51c863ac454b6aa8dfed4f57e486a19842bb7957f7239d00988d6337efe5",
+  "blockHeight": 2508900,
+  "deployedAt": "2026-09-11T22:33:48Z",
+  "explorer": "https://preprod.midnightexplorer.com/contracts/0x304666ce3bb47edab2267a88eb650330042e1d6b1bea347d8f391b3fd09d719f",
+  "sourceFile": "contract/src/veilpay.compact",
+  "sourceSha256": "e9354af62ca3afb1365488489fac3ad0bcd3fdf3",
+  "compilerVersion": "0.31.1",
+  "languageVersion": "0.23.0",
+  "runtimeVersion": "0.16.0",
+  "contractInfo": "veilpay-contract-info.json",
+  "endpoints": {
+    "indexerHttp": "https://api-preprod.1am.xyz/api/v4/graphql",
+    "indexerWs": "wss://api-preprod.1am.xyz/api/v4/graphql/ws",
+    "rpc": "wss://rpc.preprod.midnight.network"
+  },
+  "deploymentPath": {
+    "tool": "cli/src/gateway-deploy.ts (npm --workspace cli run preprod-deploy)",
+    "proving": "gateway hosted /check + /prove",
+    "funding": "gateway-sponsored DUST balancing (/balance-only), no faucet needed",
+    "submit": "author_submitExtrinsic through gateway /rpc/midnight",
+    "inclusionCheck": "hash-based polling of the indexer GraphQL"
+  },
+  "verification": {
+    "verifiedActions": [
+      "intent #1 created on this contract (amount 2500, expiresAt 50) via cli/src/gateway-cli.ts create",
+      "read-state and index queries confirmed through the indexer relay"
+    ]
+  },
+  "history": [
+    {
+      "contractAddress": "0x9747c13e14c9f378d72ab76902070fb8492214510b815e43e3a3ceb6c7118bd6",
+      "blockHeight": 2508543,
+      "note": "run3 deploy, same source; superseded by the run5 address above"
+    }
+  ],
+  "tokenSupport": "none in v1 - intents are oracle attestations, no value moves. v2 adds shielded token transfer (docs/NULLPAY-V2-SPEC.md)"
+}

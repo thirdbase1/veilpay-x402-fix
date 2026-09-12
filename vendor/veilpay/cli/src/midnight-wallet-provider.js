@@ -14,7 +14,7 @@
  */
 import { DustSecretKey, LedgerParameters, ZswapSecretKeys, } from '@midnight-ntwrk/midnight-js-protocol/ledger';
 import { ttlOneHour } from '@midnight-ntwrk/midnight-js-utils';
-import { getInitialShieldedState } from './wallet-utils.js';
+import { getInitialShieldedState } from './wallet-utils';
 import { FluentWalletBuilder } from '@midnight-ntwrk/testkit-js';
 /**
  * Provider class that implements wallet functionality for the Midnight network.

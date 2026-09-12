@@ -89,24 +89,25 @@ the first was the pre-fix deployment recorded before the watch fix landed.
 
 ## Comparison: zarkbns/condition
 
-Audited the 64 MB repo (zipball of `main`, commit `5c7f98e`). It is a
-privacy-preserving parametric insurance dApp: three Compact contracts
-(`policy.compact`, `settlement.compact`, `proofs.compact`), a Next.js frontend,
-services, and a tiered deployer.
+Audited the repo after full extraction (zipball of `main`, commit `5c7f98e`,
+~60 MB, mostly compiled key/zkir artifacts). It is a privacy-preserving
+parametric insurance dApp: three Compact contracts (`policy.compact`,
+`settlement.compact`, `proofs.compact`), a pages-router Next.js frontend, a TS
+reference runtime, and a three-tier deployer.
 
 | Dimension | condition | VeilPay |
 |---|---|---|
-| Contracts | 3 contracts, ~13 circuits, capability secrets (ZK commitments gate every privileged transition) | 1 contract, 5 circuits, one secret commitment per intent |
-| Managed artifacts | gitignored; `deploy/artifacts.json` pins verifier-key/zkir hashes from a real compactc 0.30.0 build (Android/Termux/proot) | committed via CI (0.31.1 artifact upload), locally downloaded |
-| Deployer tiers | (1) preprod with funded seed + local proot proof server + dust snapshot bootstrap, (2) local real-runtime verification, (3) reference dry-run | single tier: sponsored gateway (no faucet, no sync, hosted proving) |
-| Deployment evidence | **no `deploy/deployments.json` in the repo** -- tier 1 never recorded a successful on-chain run there | live contract + explorer link + tx/block, plus a live lifecycle tx (intent #1) |
-| Dust sync workaround | caches a deployer dust-wallet snapshot (`deploy/dust-wallet-snapshot.json`, gitignored) to skip ~1.1M events | skips wallet sync entirely; gateway balances fees |
-| Indexer | hardcodes preprod v3-era endpoints in deploy, v4 in frontend env | authenticated 1AM v4 indexer via local session-header relay |
-| Auth model | capability secrets proven in-circuit (no caller identity in compactc 0.30) | same principle: `H(merchantSecretKey)` and `H(id, paymentSecret)` commitments |
+| Contracts | 3 contracts (policy / settlement / proofs), ~15 named circuits, capability secrets gate every privileged transition | v2: 1 contract, 5 circuits, one secret commitment per intent |
+| Real value movement | **none** — no zswap/shielded-token usage anywhere in its `.compact` sources; settlement escrow is ledger bookkeeping + public receipts | v2 consumes a payer shielded coin and sends real token value to the merchant coin key via zswap (NullPay parity) |
+| Compiled artifacts | contract modules (`index.js`/`d.ts`) committed under `contracts/managed-compact/`; browser key/zkir copies committed under `frontend/public/contracts/`; heavy local layout gitignored; `deploy/artifacts.json` pins verifier-key/zkir hashes from compactc 0.30.0 (built on Android/Termux via proot) | decoders, verifier keys, and bzkir/zkir committed under `contract/src/managed/` (only multi-MB `.prover` keys ignored, regenerable from the CI `veilpay-managed` artifact); `deployments/preprod-v2.json` pins the live address + circuit metadata |
+| Deploy path | tiered: (1) preprod via wallet-sdk-facade with funded seed + **local proof server** + dust-wallet snapshot bootstrap to skip ~1.1M tree events, (2) local real-`compact-runtime` verification, (3) TS reference dry-run | single path: sponsored gateway — hosted `/check` + `/prove`, gateway-funded DUST balancing, `author_submitExtrinsic`; no faucet, no wallet sync |
+| On-chain evidence | `docs/DEPLOYMENTS.md`: full lifecycle 2026-09-05, blocks 2421479–2421557, 8 txs (2 deploys + create/fund/enroll/trigger/link/settle), all `SUCCESS`, with curl re-verify commands | two live contracts; v2 at `0x85a0f911…` block 2521381 with intent #1 ACTIVE, verified by direct `queryContractState` read (`scripts/verify-v2-live.mjs`) |
+| Indexer | official `indexer.preprod.midnight.network` v3 endpoints (their notes: `contractAction(address)` can return null for recent contracts) | authenticated 1AM v4 indexer through a local session-header relay; same address-lookup flakiness observed, worked around by hash-polling + direct state reads |
+| Toolchain constraint | same compactc finding we hit: no caller identity or cross-contract calls, so authorization is proven in-circuit against commitments | same: `H(merchantSecretKey)` / `H(id, paymentSecret)` commitments |
 
-Takeaways we could borrow later: condition's capability-secret gating is a
-clean pattern if VeilPay ever needs multi-party authorization, and their
-dust-snapshot bootstrap is a good fallback if we ever must run the vanilla
-wallet path. Their repo documents the same compactc limitation we hit: no
-caller identity or cross-contract calls, so authorization must be proven
-in-circuit against commitments.
+Where we are ahead: VeilPay v2 actually moves shielded token value on-chain,
+which condition's contracts do not attempt. Where they are ahead: committed
+browser-served key/zkir artifacts (so their public `/verify` decodes real
+on-chain state with zero setup), a mature two-source oracle trigger pattern,
+and the dust-snapshot bootstrap — a good fallback if we ever must run the
+vanilla funded-wallet path instead of the gateway.

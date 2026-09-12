@@ -9,6 +9,8 @@
     "ci": "npm run typecheck && npm run build",
     "preprod-remote": "node --experimental-specifier-resolution=node --loader ts-node/esm src/launcher/preprod.ts",
     "preprod-gateway": "node --experimental-specifier-resolution=node --loader ts-node/esm src/gateway-deploy.ts",
+    "preprod-gateway2": "node --experimental-specifier-resolution=node --loader ts-node/esm src/gateway-deploy2.ts",
+    "preprod-tx2": "node --experimental-specifier-resolution=node --loader ts-node/esm src/gateway-cli2.ts",
     "preprod-tx": "node --experimental-specifier-resolution=node --loader ts-node/esm src/gateway-cli.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

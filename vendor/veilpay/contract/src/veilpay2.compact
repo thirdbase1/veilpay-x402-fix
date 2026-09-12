@@ -1,0 +1,237 @@
+// VeilPay v2 — Private payment intents WITH real shielded token transfers.
+// This is the NullPay-parity contract: `pay` actually moves value on-chain.
+// Design rationale: docs/NULLPAY-V2-SPEC.md. v1 (veilpay.compact) stays
+// live as the oracle-only generation.
+//
+// Delta vs v1:
+//   - pay(intentId, coin) consumes the payer's shielded coin (zswap UTXO)
+//     and routes intent.amount to the merchant's registered coin public
+//     key inside the same circuit. Change is returned to the payer.
+//   - Intents carry `tokenColor` (the zswap coin type; zero = open intent
+//     accepting any color, NullPay's create_invoice_any equivalent) and
+//     `merchantCoinPk`.
+//   - A per-intent receipt commitment binds a payer-held secret to the
+//     payment without revealing who paid.
+//
+// Circuit shapes mirror the verified official Compact token-transfers
+// patterns (sendShielded on a QualifiedShieldedCoinInfo input,
+// QualifiedShieldedCoinInfo construction with mt_index, ownPublicKey()),
+// so this file compiles on the same toolchain as v1.
+
+pragma language_version >= 0.23;
+
+import CompactStandardLibrary;
+
+// Re-export stdlib coin types so TypeScript callers can import them from
+// the generated contract module (pattern from the official example).
+export { ShieldedCoinInfo, QualifiedShieldedCoinInfo, ShieldedSendResult };
+
+export enum IntentStatus {
+  ACTIVE,
+  PAID,
+  REFUNDED,
+  CANCELLED
+}
+
+export struct Intent {
+  merchantId: Bytes<32>,
+  // Where the money lands on pay. Registered by the merchant at creation.
+  merchantCoinPk: Bytes<32>,
+  // Required zswap coin color, or 0x00..00 for "any token" (open intent).
+  tokenColor: Bytes<32>,
+  amount: Uint<128>,
+  expiresAt: Uint<64>,
+  status: IntentStatus,
+  secretCommitment: Bytes<32>,
+  paidAmount: Uint<128>,
+  refundedAmount: Uint<128>
+}
+
+export ledger sequence: Counter;
+
+export ledger intents: Map<Uint<64>, Intent>;
+
+// Per-intent payer receipt commitment: H("veilpay:receipt:" || id || amount
+// || receiptSecret). Proves "I made this payment" without linking wallets.
+export ledger receipts: Map<Uint<64>, Bytes<32>>;
+
+// ─── Private witness inputs ───────────────────────────────────────
+
+witness merchantSecretKey(): Bytes<32>;
+
+witness paymentSecret(intentId: Uint<64>): Bytes<32>;
+
+// Long-lived payer key for receipts. Never leaves the payer's wallet.
+witness receiptSecret(): Bytes<32>;
+
+// ─── Pure helpers ─────────────────────────────────────────────────
+
+export circuit merchantIdentityOf(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "veilpay:merchant:"), sk]);
+}
+
+export circuit commitment(intentId: Uint<64>, secret: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([
+    pad(32, "veilpay:intent:"),
+    intentId as Field as Bytes<32>,
+    secret
+  ]);
+}
+
+// Binds the payer-held receipt secret to one specific intent. The paid
+// amount equals intent.amount (single-shot payment), so no amount field is
+// needed in the hash; secretCommitment already binds the intent uniquely.
+circuit receiptCommitment(intentId: Uint<64>, secretCommitment: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<4, Bytes<32>>>([
+    pad(32, "veilpay:receipt:"),
+    intentId as Field as Bytes<32>,
+    secretCommitment,
+    receiptSecret()
+  ]);
+}
+
+circuit isZero(a: Bytes<32>): Boolean {
+  return a == pad(32, "");
+}
+
+// ─── Circuits ─────────────────────────────────────────────────────
+
+// Merchant creates a priced intent. tokenColor zero => open intent.
+export circuit createIntent(
+  amount: Uint<128>,
+  expiresAt: Uint<64>,
+  tokenColor: Bytes<32>,
+  merchantCoinPk: Bytes<32>
+): Uint<64> {
+  assert(amount > 0, "amount must be positive");
+  assert(!isZero(merchantCoinPk), "merchant coin public key required");
+
+  sequence.increment(1);
+  const nextId = sequence;
+
+  intents.insert(disclose(nextId), disclose(Intent {
+    merchantId: merchantIdentityOf(merchantSecretKey()),
+    merchantCoinPk: merchantCoinPk,
+    tokenColor: tokenColor,
+    amount: amount,
+    expiresAt: expiresAt,
+    status: IntentStatus.ACTIVE,
+    secretCommitment: commitment(nextId, paymentSecret(nextId)),
+    paidAmount: 0 as Uint<128>,
+    refundedAmount: 0 as Uint<128>
+  }));
+
+  return nextId;
+}
+
+// Customer settles the intent AND moves value:
+//   1. prove the payment secret (same anonymity mechanism as v1);
+//   2. spend the payer's shielded coin; intent.amount goes to the
+//      merchant's coin key, any excess returns to the payer as change.
+// The payer's identity and which coin they spent are never public.
+export circuit pay(intentId: Uint<64>, coin: QualifiedShieldedCoinInfo): ShieldedSendResult {
+  assert(intents.member(disclose(intentId)), "intent not found");
+  const intent = intents.lookup(disclose(intentId));
+  assert(intent.status == IntentStatus.ACTIVE, "intent not active");
+  const currentSeq = sequence;
+  assert(currentSeq <= intent.expiresAt, "intent expired");
+
+  assert(
+    commitment(intentId, paymentSecret(intentId)) == intent.secretCommitment,
+    "invalid payment secret"
+  );
+
+  assert(coin.value >= intent.amount, "coin cannot cover intent");
+  if (!isZero(intent.tokenColor)) {
+    assert(coin.color == intent.tokenColor, "wrong token color");
+  }
+
+  const merchant = left<ZswapCoinPublicKey, ContractAddress>(
+    ZswapCoinPublicKey{ bytes: intent.merchantCoinPk }
+  );
+
+  // intent.amount is already public ledger state; only the circuit inputs
+  // (coin) need disclose.
+  const result = sendShielded(disclose(coin), merchant, intent.amount);
+
+  // Change (if the coin exceeded the price) goes back to the payer. The
+  // change coin exists only inside this transaction, so it is spent with
+  // sendImmediateShielded (the official burn-with-change pattern), not the
+  // qualified-input variant.
+  if (result.change.is_some) {
+    const caller = left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey());
+    sendImmediateShielded(result.change.value, caller, result.change.value.value);
+  }
+
+  sequence.increment(1);
+  receipts.insert(
+    disclose(intentId),
+    disclose(receiptCommitment(intentId, intent.secretCommitment))
+  );
+  intents.insert(disclose(intentId), Intent {
+    merchantId: intent.merchantId,
+    merchantCoinPk: intent.merchantCoinPk,
+    tokenColor: intent.tokenColor,
+    amount: intent.amount,
+    expiresAt: intent.expiresAt,
+    status: IntentStatus.PAID,
+    secretCommitment: intent.secretCommitment,
+    paidAmount: intent.amount,
+    refundedAmount: intent.refundedAmount
+  });
+
+  return result;
+}
+
+// Merchant marks a paid intent refunded and records the amount. The coin
+// payout itself is a merchant wallet transfer out-of-band (NullPay Model A:
+// no contract custody, no escrow liability).
+export circuit refund(intentId: Uint<64>, refundAmount: Uint<128>): [] {
+  assert(intents.member(disclose(intentId)), "intent not found");
+  const intent = intents.lookup(disclose(intentId));
+  assert(intent.merchantId == merchantIdentityOf(merchantSecretKey()), "not the intent merchant");
+  assert(intent.status == IntentStatus.PAID, "intent not paid");
+  assert(refundAmount > 0, "refund must be positive");
+  assert(refundAmount <= intent.paidAmount, "refund exceeds paid amount");
+
+  sequence.increment(1);
+  intents.insert(disclose(intentId), disclose(Intent {
+    merchantId: intent.merchantId,
+    merchantCoinPk: intent.merchantCoinPk,
+    tokenColor: intent.tokenColor,
+    amount: intent.amount,
+    expiresAt: intent.expiresAt,
+    status: IntentStatus.REFUNDED,
+    secretCommitment: intent.secretCommitment,
+    paidAmount: intent.paidAmount,
+    refundedAmount: refundAmount,
+  }));
+}
+
+export circuit cancel(intentId: Uint<64>): [] {
+  assert(intents.member(disclose(intentId)), "intent not found");
+  const intent = intents.lookup(disclose(intentId));
+  assert(intent.merchantId == merchantIdentityOf(merchantSecretKey()), "not the intent merchant");
+  assert(intent.status == IntentStatus.ACTIVE, "intent not active");
+
+  sequence.increment(1);
+  intents.insert(disclose(intentId), Intent {
+    merchantId: intent.merchantId,
+    merchantCoinPk: intent.merchantCoinPk,
+    tokenColor: intent.tokenColor,
+    amount: intent.amount,
+    expiresAt: intent.expiresAt,
+    status: IntentStatus.CANCELLED,
+    secretCommitment: intent.secretCommitment,
+    paidAmount: intent.paidAmount,
+    refundedAmount: intent.refundedAmount
+  });
+}
+
+export circuit isPaid(intentId: Uint<64>): Boolean {
+  if (intents.member(disclose(intentId))) {
+    const status = intents.lookup(disclose(intentId)).status;
+    return status == IntentStatus.PAID || status == IntentStatus.REFUNDED;
+  }
+  return false;
+}

@@ -20,7 +20,7 @@ export const runGatewayDeploy = async (): Promise<void> => {
   );
 
   logger.info('deploying VeilPay through the sponsored gateway (no faucet, no sync)');
-  const { providers, session, close } = await buildGatewayStack(logger);
+  const { providers, session, close } = await buildGatewayStack(logger, { version: 'v1' });
   try {
     const api = await VeilPayAPI.deploy(providers, logger);
     fs.mkdirSync(STATE_DIR, { recursive: true });

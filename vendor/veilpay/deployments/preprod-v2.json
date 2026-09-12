@@ -1,0 +1,118 @@
+{
+  "protocol": "veilpay",
+  "version": "v2-shielded",
+  "network": "midnight-preprod",
+  "contractAddress": "0x85a0f911bb554bf4b7e9a69bb2ee2c20a03b823b20274eade45c6b18f53583a7",
+  "deploymentTx": "0x80bc77767f62fe711c8f1095a261f5a5296de665d2523850ab9afdf8e5982ad2",
+  "blockHeight": 2521381,
+  "deployedAt": "2026-09-12T19:22:17Z",
+  "explorer": "https://preprod.midnightexplorer.com/contracts/0x85a0f911bb554bf4b7e9a69bb2ee2c20a03b823b20274eade45c6b18f53583a7",
+  "sourceFile": "contract/src/veilpay2.compact",
+  "sourceSha256": "9d324589b6b9f5cc3b74b51c1efa8528378f95eade8f37f58f0c8b39ee2a8912",
+  "compilerVersion": "0.31.1",
+  "languageVersion": "0.23.0",
+  "runtimeVersion": "0.16.0",
+  "circuits": {
+    "createIntent": {
+      "arguments": [
+        {
+          "name": "amount",
+          "type": "Uint<128>"
+        },
+        {
+          "name": "expiresAt",
+          "type": "Uint<64>"
+        },
+        {
+          "name": "tokenColor",
+          "type": "Bytes<32>"
+        },
+        {
+          "name": "merchantCoinPk",
+          "type": "Bytes<32>"
+        }
+      ],
+      "returnType": "Uint<64>",
+      "witnessInputs": [
+        "merchantSecretKey",
+        "paymentSecret(intentId)"
+      ],
+      "verifierKeyHash": "078521a3447da8a79c025676a360e4a7dd27fda53c50010d20fbfc707f18ac9a"
+    },
+    "pay": {
+      "arguments": [
+        {
+          "name": "intentId",
+          "type": "Uint<64>"
+        },
+        {
+          "name": "coin",
+          "type": "QualifiedShieldedCoinInfo{nonce,color,value,mt_index}"
+        }
+      ],
+      "returnType": "ShieldedSendResult",
+      "witnessInputs": [
+        "paymentSecret(intentId)",
+        "receiptSecret"
+      ],
+      "zswap": "consumes payer coin, sends intent.amount to merchantCoinPk, change back to payer",
+      "verifierKeyHash": "0ee56847bf2554ff5549089685e9297f41c4abb46feec7154c4dac6729898aa5"
+    },
+    "refund": {
+      "arguments": [
+        {
+          "name": "intentId",
+          "type": "Uint<64>"
+        },
+        {
+          "name": "refundAmount",
+          "type": "Uint<128>"
+        }
+      ],
+      "witnessInputs": [
+        "merchantSecretKey"
+      ]
+    },
+    "cancel": {
+      "arguments": [
+        {
+          "name": "intentId",
+          "type": "Uint<64>"
+        }
+      ],
+      "witnessInputs": [
+        "merchantSecretKey"
+      ]
+    },
+    "isPaid": {
+      "kind": "pure",
+      "arguments": [
+        {
+          "name": "intentId",
+          "type": "Uint<64>"
+        }
+      ]
+    }
+  },
+  "publicReads": {
+    "sequence": "Counter (also intent-id source)",
+    "intents": "Map<Uint<64>, Intent{merchantId, merchantCoinPk, tokenColor, amount, expiresAt, status, secretCommitment, paidAmount, refundedAmount}>",
+    "receipts": "Map<Uint<64>, Bytes<32>>"
+  },
+  "endpoints": {
+    "indexerHttp": "https://api-preprod.1am.xyz/api/v4/graphql",
+    "indexerWs": "wss://api-preprod.1am.xyz/api/v4/graphql/ws",
+    "rpc": "wss://rpc.preprod.midnight.network"
+  },
+  "deploymentPath": {
+    "tool": "cli/src/gateway-deploy2.ts (npm --workspace cli run preprod-gateway2)",
+    "proving": "gateway hosted /check + /prove",
+    "funding": "gateway-sponsored DUST balancing",
+    "submit": "author_submitExtrinsic via gateway /rpc/midnight",
+    "inclusionCheck": "hash-based indexer polling"
+  },
+  "tests": "21/21 passing (CI run 34709999710); 11 dedicated v2 contract tests",
+  "tokenSupport": "any zswap shielded token color; zero color = open intent (accepts any token)"
+}
+
+

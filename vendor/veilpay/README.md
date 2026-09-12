@@ -25,7 +25,7 @@ contract/   veilpay.compact + compiled managed artifacts + 10 vitest tests
 api/        VeilPayAPI: deploy/join contract, createIntent/pay/refund/cancel
 cli/        faucet-path CLI + sponsored-gateway deploy & lifecycle drivers
 scripts/    verify-live.mjs (read-only live ledger check)
-docs/       WEBSITE-INTEGRATION.md (start here), DEPLOYMENT.md
+ docs/       V1-VS-V2.md (start here), WEBSITE-INTEGRATION.md, DEPLOYMENT.md
 ```
 
 ## Quickstart
@@ -45,6 +45,9 @@ npm --workspace cli run preprod-tx -- pay <id> <secretHex>
 
 ## Docs
 
+- [docs/V1-VS-V2.md](docs/V1-VS-V2.md) -- what v1 and v2 each are, why v2
+  exists (NullPay parity: real shielded token transfers), and which one to
+  integrate against.
 - [docs/WEBSITE-INTEGRATION.md](docs/WEBSITE-INTEGRATION.md) -- build a website
   on the deployed contract: architecture, provider singleton, API-route
   recipes, lifecycle semantics, gotchas.

@@ -3,6 +3,14 @@
 Everything an agent (or human) needs to plug the deployed VeilPay payment-intent
 contract into a website.
 
+> **Which contract?** This guide documents **v1** (the oracle: verifies
+> payments, moves no tokens). **v2** is live at
+> `0x85a0f911bb554bf4b7e9a69bb2ee2c20a03b823b20274eade45c6b18f53583a7` and
+> additionally settles real shielded-token value (NullPay parity). New
+> integrations should target v2; see
+> [V1-VS-V2.md](V1-VS-V2.md) for the full difference, and
+> `deployments/preprod-v2.json` for its circuit metadata.
+
 ## Live Contract
 
 | Field | Value |
@@ -252,10 +260,12 @@ npm --workspace cli run typecheck
 npm --workspace contract run compact   # requires compactc or the CI artifact
 ```
 
-`contract/src/managed/` is gitignored; CI compiles it fresh with
+The compiled contract modules, verifier keys, and zkir files under
+`contract/src/managed/` are committed, so your app can import the ledger
+decoder and verify against the live contract with no build step. Multi-MB
+`.prover` keys are gitignored; CI compiles fresh with
 `midnightntwrk/setup-compact-action@v1` (compact 0.31.1) and uploads the
-`veilpay-managed` artifact. Grab it from the latest green run if you do not
-have a local compiler.
+`veilpay-managed` artifact if you need the full layout.
 
 ## Gotchas
 

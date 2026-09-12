@@ -42,11 +42,11 @@ const currentDir = path.resolve(fileURLToPath(import.meta.url), '..');
 export const STATE_DIR = path.resolve(currentDir, '..', '.veilpay-state');
 export const SESSION_FILE = path.join(STATE_DIR, 'gw_session.json');
 export const ADDRESS_FILE = path.join(STATE_DIR, 'contract-address');
-export const DEPLOY_TX_FILE = path.join(STATE_DIR, 'contract-deploy-tx');
 export const GATEWAY = 'https://api-preprod.1am.xyz';
 const GW_INDEXER_HTTP = `${GATEWAY}/api/v4/graphql`;
 const GW_INDEXER_WS = `wss://api-preprod.1am.xyz/api/v4/graphql/ws`;
 export const EXPLORER = 'https://preprod.midnightexplorer.com';
+export const ADDRESS_FILE_V2 = path.join(STATE_DIR, 'contract-address-v2');
 const hex = (b) => Buffer.from(b).toString('hex');
 const unhex = (s) => new Uint8Array(Buffer.from(s.replace(/^0x/, ''), 'hex'));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -59,20 +59,6 @@ export const loadSeed = () => {
         throw new Error(`no wallet seed at ${seedFile}; run the CLI once or set VEILPAY_SEED`);
     }
     return fs.readFileSync(seedFile, 'utf8').trim();
-};
-/**
- * Canonical deploy tx hash of the deployed VeilPay contract. The gateway
- * indexer's contractAction(address) query stopped resolving this contract's
- * deploy, so join flows fall back to polling this tx hash directly.
- */
-const loadDeployTxHash = () => {
-    const envHash = process.env.VEILPAY_DEPLOY_TX;
-    if (envHash)
-        return envHash.trim().replace(/^0x/, '');
-    if (fs.existsSync(DEPLOY_TX_FILE)) {
-        return fs.readFileSync(DEPLOY_TX_FILE, 'utf8').trim().replace(/^0x/, '');
-    }
-    return null;
 };
 /**
  * Authenticate against the gateway with a BIP-340 Schnorr signature over the
@@ -362,25 +348,10 @@ export function withPollingWatches(base, session, pendingMidnightHashes, logger)
         },
         async watchForDeployTxData(contractAddress) {
             logger.info(`watchForDeployTxData: polling indexer for deploy of ${contractAddress}`);
-            // Primary: contractAction(address). The gateway indexer stopped
-            // answering it for the canonical contract, so fall back to polling the
-            // recorded deploy tx hash via the transactions query, which works.
-            try {
-                const tx = await pollDeployTx(session, contractAddress, logger, 30_000);
-                const actionIndex = (tx.contractActions ?? []).findIndex((a) => a.address === contractAddress);
-                const txId = actionIndex >= 0 ? tx.identifiers?.[actionIndex] : tx.identifiers?.[0] ?? contractAddress;
-                return toFinalizedTxData(tx, txId);
-            }
-            catch (primaryErr) {
-                const deployHash = loadDeployTxHash();
-                if (!deployHash)
-                    throw primaryErr;
-                logger.info(`watchForDeployTxData: contractAction unresolved; falling back to deploy tx 0x${deployHash}`);
-                const tx = await pollTxByHash(session, deployHash, logger);
-                const actionIndex = (tx.contractActions ?? []).findIndex((a) => a.address === contractAddress);
-                const txId = actionIndex >= 0 ? tx.identifiers?.[actionIndex] : tx.identifiers?.[0] ?? contractAddress;
-                return toFinalizedTxData(tx, txId);
-            }
+            const tx = await pollDeployTx(session, contractAddress, logger);
+            const actionIndex = (tx.contractActions ?? []).findIndex((a) => a.address === contractAddress);
+            const txId = actionIndex >= 0 ? tx.identifiers?.[actionIndex] : tx.identifiers?.[0] ?? contractAddress;
+            return toFinalizedTxData(tx, txId);
         },
     };
 }
@@ -390,6 +361,7 @@ export function withPollingWatches(base, session, pendingMidnightHashes, logger)
  * polling inclusion watches described above.
  */
 export async function buildGatewayStack(logger, opts = {}) {
+    const version = opts.version ?? 'v1';
     setNetworkId('preprod');
     const seed = loadSeed();
     const session = await gatewaySession(seed, logger);
@@ -407,7 +379,7 @@ export async function buildGatewayStack(logger, opts = {}) {
     hd.hdWallet.clear();
     // Shielded keys come from the raw seed (matches the faucet-path identity).
     const zswapSecretKeys = ZswapSecretKeys.fromSeed(unhex(seed));
-    const zkConfigPath = path.resolve(currentDir, '..', '..', 'contract', 'src', 'managed', 'veilpay');
+    const zkConfigPath = path.resolve(currentDir, '..', '..', 'contract', 'src', 'managed', version === 'v2' ? 'veilpay2' : 'veilpay');
     const zkConfigProvider = new NodeZkConfigProvider(zkConfigPath);
     const relay = await startIndexerRelay(session, logger);
     // Midnight tx hashes reported by /balance-only, consumed in order by the
@@ -435,14 +407,6 @@ export async function buildGatewayStack(logger, opts = {}) {
                 if (res.status === 503 && attempt < 9) {
                     const waitMs = Math.min(Number(/"retryAfterMs":(\d+)/.exec(body)?.[1] ?? 5000) * (attempt + 1), 30_000);
                     logger.info(`gateway /balance-only 503 (dust sync stale), retrying in ${waitMs}ms`);
-                    await sleep(waitMs);
-                    continue;
-                }
-                // The gateway allows only one pending balance transaction per session;
-                // a 429 means a previous one has not expired yet. Wait it out.
-                if (res.status === 429 && attempt < 9) {
-                    const waitMs = Math.min(Number(/"retryAfterMs":(\d+)/.exec(body)?.[1] ?? 10_000), 30_000);
-                    logger.info(`gateway /balance-only 429 (balance tx pending), retrying in ${waitMs}ms`);
                     await sleep(waitMs);
                     continue;
                 }
@@ -517,7 +481,7 @@ export async function buildGatewayStack(logger, opts = {}) {
                 throw new Error(`gateway submit returned non-JSON (${res.status}): ${text.slice(0, 200)}`);
             }
             if (json.error) {
-                throw new Error(`gateway submit rejected: ${json.error.message ?? JSON.stringify(json.error)}`);
+                throw new Error(`gateway submit rejected: ${json.error.message ?? JSON.stringify(json.error)} | full: ${text.slice(0, 400)}`);
             }
             if (!json.result) {
                 throw new Error(`gateway submit returned no hash: ${text.slice(0, 200)}`);
@@ -527,10 +491,11 @@ export async function buildGatewayStack(logger, opts = {}) {
         },
     };
     const basePublicData = indexerPublicDataProvider(relay.httpUrl, relay.wsUrl);
+    const storeName = opts.privateStateStoreName ?? (version === 'v2' ? 'veilpay2-private-state' : 'veilpay-private-state');
     const providers = {
         privateStateProvider: levelPrivateStateProvider({
-            privateStateStoreName: opts.privateStateStoreName ?? 'veilpay-private-state',
-            signingKeyStoreName: 'veilpay-private-state-signing-keys',
+            privateStateStoreName: storeName,
+            signingKeyStoreName: `${storeName}-signing-keys`,
             privateStoragePasswordProvider: () => 'VeilPay-Local-2026!',
             accountId: seed,
         }),
