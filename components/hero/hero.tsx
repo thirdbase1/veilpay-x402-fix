@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ArrowRight, BookOpen } from 'lucide-react'
 import { VerificationFlow } from '@/components/payment-flow/verification-flow'
 import { Reveal } from '@/components/site/reveal'
+import { RedactedReveal } from '@/components/site/redacted-reveal'
 import { routes } from '@/lib/config'
 
 export function Hero() {
@@ -25,13 +26,13 @@ export function Hero() {
             </span>
           </Reveal>
 
-          <Reveal delay={80}>
-            <h1 className="mt-6 text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
-              Private payments.
-              <br />
+          <h1 className="mt-6 text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
+            <RedactedReveal delay={150}>Private payments.</RedactedReveal>
+            <br />
+            <RedactedReveal delay={450}>
               <span className="text-primary">Public confidence.</span>
-            </h1>
-          </Reveal>
+            </RedactedReveal>
+          </h1>
 
           <Reveal delay={160}>
             <p className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">

@@ -68,12 +68,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         )}
 
         {/* Main Workspace Area */}
-        <div className="relative flex flex-1 flex-col overflow-hidden">
-          {/* Veil-lift: one-time redaction reveal on load */}
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-40 overflow-hidden">
-            <div className="veil-lift-overlay absolute inset-0" />
-            <div className="veil-lift-edge absolute inset-x-0 bottom-0 h-24" />
-          </div>
+        <div className="flex flex-1 flex-col overflow-hidden">
           {children}
         </div>
       </div>
