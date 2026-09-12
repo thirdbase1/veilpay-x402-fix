@@ -21,12 +21,15 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -36,44 +39,50 @@
 }
 
 /*
-  VeilPay — Obsidian Stealth Fintech
-  Dark-first palette. Neutrals are cool obsidian slates; a single cryptographic
-  cyan is the brand accent, with emerald reserved for verified/success states.
+  VeilPay — "Midnight Vault"
+  A deep indigo-ink canvas with warm bone type. One amber signal carries value
+  and action; mint marks verified states, coral marks expiry. The redaction bar
+  is the signature motif — concealment made visible.
 */
 :root {
   color-scheme: dark;
 
-  --background: oklch(0.16 0.012 264);
-  --foreground: oklch(0.97 0.004 264);
+  --background: oklch(0.145 0.03 274);
+  --foreground: oklch(0.96 0.01 90);
 
-  --card: oklch(0.19 0.014 264);
-  --card-foreground: oklch(0.97 0.004 264);
+  --card: oklch(0.185 0.032 274);
+  --card-foreground: oklch(0.96 0.01 90);
 
-  --popover: oklch(0.18 0.014 264);
-  --popover-foreground: oklch(0.97 0.004 264);
+  --popover: oklch(0.175 0.032 274);
+  --popover-foreground: oklch(0.96 0.01 90);
 
-  /* Cryptographic cyan — the single brand accent */
-  --primary: oklch(0.82 0.13 195);
-  --primary-foreground: oklch(0.17 0.02 240);
+  /* Amber signal — value, action, the seal */
+  --primary: oklch(0.8 0.15 78);
+  --primary-foreground: oklch(0.18 0.04 274);
 
-  --secondary: oklch(0.24 0.016 264);
-  --secondary-foreground: oklch(0.97 0.004 264);
+  --secondary: oklch(0.24 0.035 274);
+  --secondary-foreground: oklch(0.96 0.01 90);
 
-  --muted: oklch(0.23 0.014 264);
-  --muted-foreground: oklch(0.68 0.02 264);
+  --muted: oklch(0.22 0.03 274);
+  --muted-foreground: oklch(0.7 0.02 274);
 
-  /* Verified emerald — reserved for success/verification states */
-  --accent: oklch(0.78 0.16 165);
-  --accent-foreground: oklch(0.17 0.02 240);
+  /* Mint — verified / satisfied */
+  --accent: oklch(0.8 0.14 165);
+  --accent-foreground: oklch(0.18 0.04 274);
 
-  --destructive: oklch(0.63 0.2 25);
-  --destructive-foreground: oklch(0.97 0.004 264);
+  /* Coral — expired / destructive */
+  --destructive: oklch(0.66 0.19 25);
+  --destructive-foreground: oklch(0.97 0.01 90);
 
-  --border: oklch(0.3 0.014 264 / 60%);
-  --input: oklch(0.3 0.014 264 / 70%);
-  --ring: oklch(0.82 0.13 195 / 60%);
+  /* Orange — pending / in-flight */
+  --warning: oklch(0.78 0.13 60);
+  --warning-foreground: oklch(0.18 0.04 274);
 
-  --radius: 0.625rem;
+  --border: oklch(0.34 0.03 274 / 55%);
+  --input: oklch(0.34 0.03 274 / 65%);
+  --ring: oklch(0.8 0.15 78 / 55%);
+
+  --radius: 0.75rem;
 }
 
 @theme inline {
@@ -91,20 +100,42 @@
     @apply bg-background text-foreground;
     font-feature-settings: 'ss01', 'cv01';
   }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display;
+  }
 }
 
 @layer utilities {
-  /* Fine cryptographic grid used sparingly for technical depth */
+  /* Fine cryptographic grid, used sparingly for technical depth */
   .veil-grid {
     background-image:
-      linear-gradient(to right, oklch(0.3 0.014 264 / 22%) 1px, transparent 1px),
-      linear-gradient(to bottom, oklch(0.3 0.014 264 / 22%) 1px, transparent 1px);
+      linear-gradient(to right, oklch(0.34 0.03 274 / 20%) 1px, transparent 1px),
+      linear-gradient(to bottom, oklch(0.34 0.03 274 / 20%) 1px, transparent 1px);
     background-size: 44px 44px;
   }
 
   .veil-radial {
-    background:
-      radial-gradient(60% 50% at 50% 0%, oklch(0.82 0.13 195 / 8%), transparent 70%);
+    background: radial-gradient(60% 50% at 50% 0%, oklch(0.8 0.15 78 / 10%), transparent 70%);
+  }
+
+  /* Signature motif: a redaction bar — concealment made visible. */
+  .veil-redact {
+    background-image: repeating-linear-gradient(
+      90deg,
+      currentColor 0,
+      currentColor 14px,
+      transparent 14px,
+      transparent 22px
+    );
+  }
+
+  .veil-glow {
+    box-shadow:
+      0 0 0 1px oklch(0.8 0.15 78 / 18%),
+      0 18px 50px -20px oklch(0.8 0.15 78 / 35%);
   }
 
   .text-balance {

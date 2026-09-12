@@ -29,8 +29,13 @@ export function DashboardHeader({
   const shortActionLabel = action?.label?.split(' ')[0] || 'Create'
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/70 bg-background/80 px-4 sm:px-8 backdrop-blur-xl gap-2">
-      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-2 border-b border-border/50 bg-background/70 px-4 backdrop-blur-xl sm:px-8">
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"
+      />
+
+      <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
         <button
           type="button"
           onClick={handleOpen}
@@ -41,18 +46,16 @@ export function DashboardHeader({
         </button>
 
         <div className="min-w-0">
-          <h1 className="text-xs sm:text-base font-semibold tracking-tight text-foreground truncate">
+          <h1 className="truncate font-display text-sm font-semibold tracking-tight text-foreground sm:text-base">
             {title}
           </h1>
           {description && (
-            <p className="hidden text-xs text-muted-foreground sm:block truncate">
-              {description}
-            </p>
+            <p className="hidden truncate text-xs text-muted-foreground sm:block">{description}</p>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         <NotificationPopover />
 
         <WalletButton />
@@ -62,7 +65,7 @@ export function DashboardHeader({
         {action && (
           <Link
             href={action.href}
-            className="inline-flex h-9 items-center gap-1.5 sm:gap-2 rounded-lg bg-primary px-3 sm:px-3.5 text-xs font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-[0_8px_24px_-10px_oklch(0.8_0.15_78/0.8)] transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-2 sm:px-3.5"
           >
             <PlusCircle className="size-3.5" />
             <span className="hidden sm:inline">{action.label}</span>

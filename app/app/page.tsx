@@ -139,7 +139,7 @@ export default function MerchantOverviewPage() {
             title="Active Payment Intents"
             value={metrics?.activeCount ?? 0}
             subtext="Awaiting customer proof"
-            icon={<Clock className="size-4 text-cyan-400" />}
+            icon={<Clock className="size-4 text-primary" />}
             isLoading={isLoading}
           />
 
@@ -147,7 +147,7 @@ export default function MerchantOverviewPage() {
             title="Verified Payments"
             value={metrics?.verifiedCount ?? 0}
             subtext="Satisfied conditions"
-            icon={<CheckCircle2 className="size-4 text-emerald-400" />}
+            icon={<CheckCircle2 className="size-4 text-accent" />}
             isLoading={isLoading}
           />
 
@@ -155,7 +155,7 @@ export default function MerchantOverviewPage() {
             title="Pending Verification"
             value={metrics?.pendingCount ?? 0}
             subtext="Zero-knowledge proof in progress"
-            icon={<RefreshCw className="size-4 text-amber-400" />}
+            icon={<RefreshCw className="size-4 text-warning" />}
             isLoading={isLoading}
           />
 
@@ -163,17 +163,17 @@ export default function MerchantOverviewPage() {
             title="Expired Intents"
             value={metrics?.expiredCount ?? 0}
             subtext="Unsatisfied within deadline"
-            icon={<AlertTriangle className="size-4 text-zinc-400" />}
+            icon={<AlertTriangle className="size-4 text-destructive" />}
             isLoading={isLoading}
           />
         </div>
 
         {/* Recent Payment Intents Section */}
-        <div className="rounded-2xl border border-border/70 bg-card/40 backdrop-blur-sm overflow-hidden">
+        <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm">
           <div className="flex flex-col gap-3 border-b border-border/70 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold tracking-tight text-foreground">
+                <h2 className="font-display text-sm font-semibold tracking-tight text-foreground">
                   Recent Payment Intents
                 </h2>
                 <span className="rounded-full bg-muted/60 px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
