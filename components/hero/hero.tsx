@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowRight, BookOpen } from 'lucide-react'
 import { VerificationFlow } from '@/components/payment-flow/verification-flow'
 import { Reveal } from '@/components/site/reveal'
@@ -23,7 +24,14 @@ export function Hero() {
         <div>
           <Reveal>
             <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/50 px-3 py-1 font-mono text-xs text-muted-foreground backdrop-blur-sm">
-              <span className="size-1.5 rounded-full bg-accent" aria-hidden="true" />
+              <Image
+                src="/midnight-mark.png"
+                alt=""
+                aria-hidden="true"
+                width={16}
+                height={16}
+                className="size-4 rounded-full ring-1 ring-white/10"
+              />
               Privacy-preserving payments on Midnight
             </span>
           </Reveal>

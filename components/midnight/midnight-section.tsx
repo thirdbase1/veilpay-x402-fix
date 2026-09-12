@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { ArrowUpRight } from 'lucide-react'
 import { Section, SectionEyebrow, SectionHeading } from '@/components/site/section'
 import { Reveal } from '@/components/site/reveal'
@@ -13,7 +14,16 @@ export function MidnightSection() {
         />
         <div className="relative max-w-2xl">
           <Reveal>
-            <SectionEyebrow>Why Midnight</SectionEyebrow>
+            <div className="flex items-center gap-3">
+              <Image
+                src="/midnight-mark.png"
+                alt="Midnight Network logo"
+                width={44}
+                height={44}
+                className="size-11 rounded-xl ring-1 ring-white/10"
+              />
+              <SectionEyebrow>Why Midnight</SectionEyebrow>
+            </div>
             <SectionHeading>Built for a world where privacy is programmable.</SectionHeading>
           </Reveal>
           <Reveal delay={80}>

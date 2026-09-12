@@ -6,7 +6,6 @@ import {
   ArrowRight,
   AlertCircle,
   Loader2,
-  Wallet,
   Puzzle,
   Download,
   RefreshCw,
@@ -127,7 +126,14 @@ export function WalletConnectForm({
     <div className="space-y-2">
       <div className="space-y-2">
         <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-mono text-primary font-medium">
-          <Wallet className="size-3" />
+          <Image
+            src="/midnight-mark.png"
+            alt=""
+            aria-hidden="true"
+            width={14}
+            height={14}
+            className="size-3.5 rounded-full ring-1 ring-white/10"
+          />
           Midnight Wallet
         </div>
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">

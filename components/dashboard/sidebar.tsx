@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import Image from 'next/image'
 import { BrandWordmark } from '@/components/site/brand'
 import {
   LayoutDashboard,
@@ -99,7 +100,15 @@ export function DashboardSidebar({ onNavigate }: SidebarProps) {
       <div className="border-t border-border/50 p-3">
         <div className="rounded-lg border border-border/50 bg-card/50 p-2.5">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              <Image
+                src="/midnight-mark.png"
+                alt=""
+                aria-hidden="true"
+                width={14}
+                height={14}
+                className="size-3.5 rounded-full ring-1 ring-white/10"
+              />
               Midnight
             </span>
             <span className="flex items-center gap-1.5 font-mono text-[11px] text-foreground">

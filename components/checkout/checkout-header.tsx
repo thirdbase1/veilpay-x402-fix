@@ -1,6 +1,7 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { BrandWordmark } from '@/components/site/brand'
-import { Lock, ShieldCheck } from 'lucide-react'
+import { Lock } from 'lucide-react'
 import { midnightPublicConfig } from '@/lib/config'
 
 interface CheckoutHeaderProps {
@@ -26,8 +27,14 @@ export function CheckoutHeader({ network }: CheckoutHeaderProps) {
             <span className="font-medium text-foreground">Private Checkout</span>
           </div>
 
-          <div className="hidden sm:inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 font-mono text-[10px] text-primary">
-            <ShieldCheck className="size-3" aria-hidden="true" />
+          <div className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 font-mono text-[10px] text-primary">
+            <Image
+              src="/midnight-mark.png"
+              alt="Midnight Network"
+              width={14}
+              height={14}
+              className="size-3.5 rounded-full ring-1 ring-white/10"
+            />
             <span>Midnight {displayNetwork}</span>
           </div>
         </div>
