@@ -212,7 +212,7 @@ export function CheckoutAction({
               <ul className="space-y-1 text-[11px] text-muted-foreground font-mono">
                 {pendingCapabilities.map((cap) => (
                   <li key={cap} className="flex items-start gap-1.5">
-                    <span className="text-primary">•</span>
+                    <span aria-hidden className="mt-1 size-1 shrink-0 rounded-full bg-primary" />
                     <span>{cap}</span>
                   </li>
                 ))}

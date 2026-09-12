@@ -184,7 +184,9 @@ export default function DocsPage() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-mono text-primary mb-4">
                 <Terminal className="size-3.5" />
-                <span>VeilPay Protocol v1.0 • Midnight Preprod</span>
+                <span>VeilPay Protocol v1.0</span>
+                <span aria-hidden className="size-1 rounded-full bg-primary" />
+                <span>Midnight Preprod</span>
               </div>
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
                 VeilPay Developer Documentation
@@ -804,19 +806,19 @@ export default function DocsPage() {
                   </div>
                   <ul className="space-y-2 text-xs text-muted-foreground">
                     <li className="flex items-start gap-2">
-                      <span className="text-amber-400">•</span>
+                      <span aria-hidden className="mt-1.5 size-1 shrink-0 rounded-full bg-amber-400" />
                       <span><strong>Intent Requirements:</strong> Required amount condition, asset symbol (tDUST), and deadline.</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-amber-400">•</span>
+                      <span aria-hidden className="mt-1.5 size-1 shrink-0 rounded-full bg-amber-400" />
                       <span><strong>Merchant Address:</strong> The recipient account designated to receive settlement.</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-amber-400">•</span>
+                      <span aria-hidden className="mt-1.5 size-1 shrink-0 rounded-full bg-amber-400" />
                       <span><strong>Reference Handle:</strong> Non-secret order identifier (e.g. Invoice #2026-01).</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-amber-400">•</span>
+                      <span aria-hidden className="mt-1.5 size-1 shrink-0 rounded-full bg-amber-400" />
                       <span><strong>Satisfaction State:</strong> Boolean confirmation on-chain that the conditions were met.</span>
                     </li>
                   </ul>
@@ -830,19 +832,19 @@ export default function DocsPage() {
                   </div>
                   <ul className="space-y-2 text-xs text-muted-foreground">
                     <li className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
+                      <span aria-hidden className="mt-1.5 size-1 shrink-0 rounded-full bg-primary" />
                       <span><strong>Payer Wallet Address:</strong> Never revealed to the merchant or exposed on public ledger.</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
+                      <span aria-hidden className="mt-1.5 size-1 shrink-0 rounded-full bg-primary" />
                       <span><strong>Payer Account Balance:</strong> Total holdings remain entirely hidden.</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
+                      <span aria-hidden className="mt-1.5 size-1 shrink-0 rounded-full bg-primary" />
                       <span><strong>Transaction History:</strong> Previous and subsequent purchases cannot be linked or profiled.</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
+                      <span aria-hidden className="mt-1.5 size-1 shrink-0 rounded-full bg-primary" />
                       <span><strong>Actual Amount Paid in Range:</strong> If predicate is between $10-$50, exact paid value can remain shielded.</span>
                     </li>
                   </ul>

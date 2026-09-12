@@ -99,7 +99,7 @@ export function PaymentQR({
           <QrIcon className="size-3 text-primary" />
           Scan to Pay
         </span>
-        <span className="text-muted-foreground/40">•</span>
+        <span aria-hidden className="size-1 rounded-full bg-muted-foreground/40" />
         <button
           type="button"
           onClick={handleDownload}

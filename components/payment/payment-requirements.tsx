@@ -88,7 +88,7 @@ export function PaymentRequirements({ intent }: PaymentRequirementsProps) {
             </p>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
               <span>Asset: <strong className="font-mono text-foreground">{conditions.amount.asset}</strong></span>
-              <span>•</span>
+              <span aria-hidden className="size-1 rounded-full bg-muted-foreground/60" />
               <span>Predicate: <strong className="font-medium text-foreground">{predicateLabel}</strong></span>
             </div>
           </div>

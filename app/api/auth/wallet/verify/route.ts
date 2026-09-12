@@ -33,6 +33,58 @@ function isHex(value: unknown, length: number): value is string {
   return typeof value === 'string' && value.length === length && /^[0-9a-fA-F]+$/.test(value)
 }
 
+/** Provision (or reuse) the wallet account and mint a browser session. */
+async function mintSession({
+  email,
+  password,
+  metadata,
+}: {
+  email: string
+  password: string
+  metadata: Record<string, unknown>
+}) {
+  const admin = getAdminClient()
+  const { error: createError } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: metadata,
+  })
+
+  if (createError && !createError.message.toLowerCase().includes('already been registered')) {
+    return NextResponse.json(
+      { error: 'Could not provision the wallet account. Please try again.' },
+      { status: 500 },
+    )
+  }
+
+  // Sign in on the cookie-bound client so the session is stored in browser cookies.
+  const supabase = await createSupabaseServerClient()
+  const { data: sessionData, error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+
+  if (signInError || !sessionData.user) {
+    return NextResponse.json(
+      { error: 'Wallet verified but the session could not be established. Please try again.' },
+      { status: 500 },
+    )
+  }
+
+  const { data: profile } = await supabase
+    .from('merchant_profiles')
+    .select('onboarding_status')
+    .eq('auth_user_id', sessionData.user.id)
+    .maybeSingle()
+
+  return NextResponse.json({
+    success: true,
+    walletPubkey: (metadata.wallet_pubkey as string) ?? null,
+    hasProfile: profile?.onboarding_status === 'completed',
+  })
+}
+
 export async function POST(request: NextRequest) {
   const secret = process.env.SUPABASE_JWT_SECRET
   if (!secret) {
@@ -42,7 +94,15 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  let body: { publicKey?: unknown; signature?: unknown; nonce?: unknown; timestamp?: unknown }
+  let body: {
+    mode?: unknown
+    publicKey?: unknown
+    signature?: unknown
+    nonce?: unknown
+    timestamp?: unknown
+    walletId?: unknown
+    address?: unknown
+  }
   try {
     body = await request.json()
   } catch {
@@ -50,6 +110,57 @@ export async function POST(request: NextRequest) {
   }
 
   const { publicKey, signature, nonce, timestamp } = body
+
+  // Extension mode: the identity is the extension-approved account address.
+  // Ownership is established by the user approving the enable() handshake in
+  // their wallet extension (Lace / 1AM) — no seed material ever reaches us.
+  if (body.mode === 'extension') {
+    const { walletId, address } = body
+    if (
+      typeof walletId !== 'string' ||
+      walletId.length === 0 ||
+      walletId.length > 64 ||
+      !/^[\w-]+$/.test(walletId) ||
+      typeof address !== 'string' ||
+      address.length === 0 ||
+      address.length > 256
+    ) {
+      return NextResponse.json({ error: 'Malformed wallet credentials.' }, { status: 400 })
+    }
+
+    const ts = Number(timestamp)
+    if (!Number.isInteger(ts) || Math.abs(Math.floor(Date.now() / 1000) - ts) > CHALLENGE_MAX_AGE_SECONDS) {
+      return NextResponse.json({ error: 'Challenge expired. Please try again.' }, { status: 401 })
+    }
+
+    const expectedNonce = createHmac('sha256', secret)
+      .update(`veilpay-wallet-challenge:${ts}`)
+      .digest('hex')
+    const nonceMatch =
+      typeof nonce === 'string' &&
+      nonce.length === expectedNonce.length &&
+      timingSafeEqual(Buffer.from(nonce, 'hex'), Buffer.from(expectedNonce, 'hex'))
+    if (!nonceMatch) {
+      return NextResponse.json({ error: 'Invalid challenge. Please try again.' }, { status: 401 })
+    }
+
+    const identity = `${walletId}:${address.toLowerCase()}`
+    const email = `wallet-${createHmac('sha256', secret).update(`veilpay-wallet-id:${identity}`).digest('hex')}@wallet.veilpay.app`
+    const password = createHmac('sha256', secret)
+      .update(`veilpay-wallet-session:${identity}`)
+      .digest('hex')
+
+    return mintSession({
+      email,
+      password,
+      metadata: {
+        wallet_provider: walletId,
+        wallet_address: address,
+        wallet_pubkey: address,
+        auth_method: 'wallet-extension',
+      },
+    })
+  }
   // BIP-340 keys are 32-byte x-only (64 hex chars); signatures are 64 bytes.
   if (!isHex(publicKey, 64) || !isHex(signature, 128) || !isHex(nonce, 64)) {
     return NextResponse.json({ error: 'Malformed wallet credentials.' }, { status: 400 })
@@ -89,44 +200,9 @@ export async function POST(request: NextRequest) {
     .update(`veilpay-wallet-session:${normalizedKey}`)
     .digest('hex')
 
-  const admin = getAdminClient()
-  const { data: created, error: createError } = await admin.auth.admin.createUser({
+  return mintSession({
     email,
     password,
-    email_confirm: true,
-    user_metadata: { wallet_pubkey: normalizedKey, auth_method: 'wallet' },
-  })
-
-  if (createError && !createError.message.toLowerCase().includes('already been registered')) {
-    return NextResponse.json(
-      { error: 'Could not provision the wallet account. Please try again.' },
-      { status: 500 },
-    )
-  }
-
-  // Sign in on the cookie-bound client so the session is stored in browser cookies.
-  const supabase = await createSupabaseServerClient()
-  const { data: sessionData, error: signInError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-
-  if (signInError || !sessionData.user) {
-    return NextResponse.json(
-      { error: 'Wallet verified but the session could not be established. Please try again.' },
-      { status: 500 },
-    )
-  }
-
-  const { data: profile } = await supabase
-    .from('merchant_profiles')
-    .select('onboarding_status')
-    .eq('auth_user_id', sessionData.user.id)
-    .maybeSingle()
-
-  return NextResponse.json({
-    success: true,
-    walletPubkey: normalizedKey,
-    hasProfile: profile?.onboarding_status === 'completed',
+    metadata: { wallet_pubkey: normalizedKey, auth_method: 'wallet' },
   })
 }
