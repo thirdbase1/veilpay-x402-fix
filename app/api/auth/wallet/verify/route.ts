@@ -33,29 +33,82 @@ function isHex(value: unknown, length: number): value is string {
   return typeof value === 'string' && value.length === length && /^[0-9a-fA-F]+$/.test(value)
 }
 
-/** Provision (or reuse) the wallet account and mint a browser session. */
+/** Provision (or reuse) the wallet account and mint a browser session.
+ * `legacyEmails` are identity schemes from earlier builds — if the wallet
+ * already had an account under one of them (with its completed merchant
+ * profile), it is migrated to the current deterministic credentials instead
+ * of minting a duplicate account that would force onboarding again. */
 async function mintSession({
   email,
   password,
   metadata,
+  legacyEmails = [],
 }: {
   email: string
   password: string
   metadata: Record<string, unknown>
+  legacyEmails?: string[]
 }) {
   const admin = getAdminClient()
-  const { error: createError } = await admin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: metadata,
-  })
 
-  if (createError && !createError.message.toLowerCase().includes('already been registered')) {
-    return NextResponse.json(
-      { error: 'Could not provision the wallet account. Please try again.' },
-      { status: 500 },
+  // Reclaim an existing account: either the current email, a legacy-scheme
+  // email, or any account whose metadata carries the same wallet address.
+  // The churn bug minted several duplicates per wallet — prefer the one whose
+  // merchant profile completed onboarding so the merchant keeps their data.
+  const { data: listed } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  const walletAddress = typeof metadata.wallet_address === 'string' ? metadata.wallet_address.toLowerCase() : null
+  const candidates = (listed?.users ?? []).filter(
+    (u) =>
+      u.email === email ||
+      (typeof u.email === 'string' && legacyEmails.includes(u.email)) ||
+      (walletAddress !== null &&
+        typeof u.user_metadata?.wallet_address === 'string' &&
+        u.user_metadata.wallet_address.toLowerCase() === walletAddress),
+  )
+
+  let existing: { id: string; email?: string } | undefined
+  if (candidates.length > 0) {
+    const supabase = await createSupabaseServerClient()
+    const { data: profiles } = await supabase
+      .from('merchant_profiles')
+      .select('auth_user_id, onboarding_status')
+      .in(
+        'auth_user_id',
+        candidates.map((c) => c.id),
+      )
+    const completed = new Set(
+      (profiles ?? []).filter((p) => p.onboarding_status === 'completed').map((p) => p.auth_user_id),
     )
+    existing = candidates.find((c) => completed.has(c.id)) ?? candidates[0]
+  }
+
+  if (existing) {
+    const { error: updateError } = await admin.auth.admin.updateUserById(existing.id, {
+      email: existing.email ?? email,
+      password,
+      user_metadata: metadata,
+    })
+    if (updateError) {
+      console.error('[v0] Wallet account migration failed:', updateError.message)
+      return NextResponse.json(
+        { error: 'Could not restore the wallet account. Please try again.' },
+        { status: 500 },
+      )
+    }
+  } else {
+    const { error: createError } = await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: metadata,
+    })
+
+    if (createError && !createError.message.toLowerCase().includes('already been registered')) {
+      return NextResponse.json(
+        { error: 'Could not provision the wallet account. Please try again.' },
+        { status: 500 },
+      )
+    }
   }
 
   // Sign in on the cookie-bound client so the session is stored in browser cookies.
