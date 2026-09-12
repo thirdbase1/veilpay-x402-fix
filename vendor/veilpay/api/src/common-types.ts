@@ -6,8 +6,8 @@
 
 import { type MidnightProviders } from '@midnight-ntwrk/midnight-js-types';
 import { type FoundContract } from '@midnight-ntwrk/midnight-js-contracts';
-import type { VeilPay } from '../../contract/src/index';
-import type { VeilPayPrivateState } from '../../contract/src/witnesses';
+import type { VeilPay } from '../../contract/src/index.js';
+import type { VeilPayPrivateState } from '../../contract/src/witnesses.js';
 
 export const veilPayPrivateStateKey = 'veilPayPrivateState';
 export type PrivateStateId = typeof veilPayPrivateStateKey;

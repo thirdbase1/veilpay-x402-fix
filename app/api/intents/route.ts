@@ -304,7 +304,7 @@ export async function POST(request: Request) {
 
     const chainIntentId = await api.createIntent(
       amountMicro,
-      expiresAtOps,
+      BigInt(expiresAtOps),
       secretToBytes(paymentSecret),
     )
 

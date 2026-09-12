@@ -16,7 +16,7 @@ import {
   type IntentView,
   veilPayPrivateStateKey,
 } from './common-types.js';
-import { CompiledVeilPayContractContract } from '../../contract/src/index';
+import { CompiledVeilPayContractContract } from '../../contract/src/index.js';
 import * as utils from './utils/index.js';
 import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
 import { combineLatest, map, tap, from, type Observable } from 'rxjs';

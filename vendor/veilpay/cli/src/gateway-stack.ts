@@ -57,6 +57,7 @@ const currentDir = path.resolve(fileURLToPath(import.meta.url), '..');
 export const STATE_DIR = path.resolve(currentDir, '..', '.veilpay-state');
 export const SESSION_FILE = path.join(STATE_DIR, 'gw_session.json');
 export const ADDRESS_FILE = path.join(STATE_DIR, 'contract-address');
+export const DEPLOY_TX_FILE = path.join(STATE_DIR, 'contract-deploy-tx');
 
 export const GATEWAY = 'https://api-preprod.1am.xyz';
 const GW_INDEXER_HTTP = `${GATEWAY}/api/v4/graphql`;
@@ -85,6 +86,20 @@ export const loadSeed = (): string => {
     throw new Error(`no wallet seed at ${seedFile}; run the CLI once or set VEILPAY_SEED`);
   }
   return fs.readFileSync(seedFile, 'utf8').trim();
+};
+
+/**
+ * Canonical deploy tx hash of the deployed VeilPay contract. The gateway
+ * indexer's contractAction(address) query stopped resolving this contract's
+ * deploy, so join flows fall back to polling this tx hash directly.
+ */
+const loadDeployTxHash = (): string | null => {
+  const envHash = process.env.VEILPAY_DEPLOY_TX;
+  if (envHash) return envHash.trim().replace(/^0x/, '');
+  if (fs.existsSync(DEPLOY_TX_FILE)) {
+    return fs.readFileSync(DEPLOY_TX_FILE, 'utf8').trim().replace(/^0x/, '');
+  }
+  return null;
 };
 
 /**
@@ -400,13 +415,31 @@ export function withPollingWatches(
     },
     async watchForDeployTxData(contractAddress: string): Promise<FinalizedTxData> {
       logger.info(`watchForDeployTxData: polling indexer for deploy of ${contractAddress}`);
-      const tx = await pollDeployTx(session, contractAddress, logger);
-      const actionIndex = (tx.contractActions ?? []).findIndex(
-        (a: any) => a.address === contractAddress,
-      );
-      const txId: TransactionId =
-        actionIndex >= 0 ? tx.identifiers?.[actionIndex] : tx.identifiers?.[0] ?? contractAddress;
-      return toFinalizedTxData(tx, txId);
+      // Primary: contractAction(address). The gateway indexer stopped
+      // answering it for the canonical contract, so fall back to polling the
+      // recorded deploy tx hash via the transactions query, which works.
+      try {
+        const tx = await pollDeployTx(session, contractAddress, logger, 30_000);
+        const actionIndex = (tx.contractActions ?? []).findIndex(
+          (a: any) => a.address === contractAddress,
+        );
+        const txId: TransactionId =
+          actionIndex >= 0 ? tx.identifiers?.[actionIndex] : tx.identifiers?.[0] ?? contractAddress;
+        return toFinalizedTxData(tx, txId);
+      } catch (primaryErr) {
+        const deployHash = loadDeployTxHash();
+        if (!deployHash) throw primaryErr;
+        logger.info(
+          `watchForDeployTxData: contractAction unresolved; falling back to deploy tx 0x${deployHash}`,
+        );
+        const tx = await pollTxByHash(session, deployHash, logger);
+        const actionIndex = (tx.contractActions ?? []).findIndex(
+          (a: any) => a.address === contractAddress,
+        );
+        const txId: TransactionId =
+          actionIndex >= 0 ? tx.identifiers?.[actionIndex] : tx.identifiers?.[0] ?? contractAddress;
+        return toFinalizedTxData(tx, txId);
+      }
     },
   };
 }

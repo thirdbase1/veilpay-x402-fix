@@ -55,7 +55,7 @@ export function getVeilPayReadiness(): VeilPayReadiness {
   }
   if (!artifactsPresent) {
     missing.push(
-      'Compiled contract artifacts: extract the "veilpay-managed" CI artifact into vendor/veilpay/contract/src/managed/',
+      'Compiled contract artifacts: run `compact compile` (or extract the "veilpay-managed" CI artifact) into vendor/veilpay/contract/src/managed/',
     )
   }
 
@@ -82,9 +82,10 @@ export class VeilPayUnavailableError extends Error {
 
 /** Minimal structural types for the vendored API surface we use. */
 export interface VeilPayApi {
-  deployedContractAddress: { address: string }
+  /** Raw contract address (no 0x prefix), as held by the joined contract. */
+  deployedContractAddress: string
   providers: unknown
-  createIntent(amount: bigint, expiresAt: number, paymentSecret: Uint8Array): Promise<bigint>
+  createIntent(amount: bigint, expiresAt: bigint, paymentSecret: Uint8Array): Promise<bigint>
   pay(intentId: bigint, paymentSecret: Uint8Array): Promise<unknown>
   refund(intentId: bigint, amount: bigint): Promise<unknown>
   cancel(intentId: bigint): Promise<unknown>
@@ -131,19 +132,23 @@ async function buildVeilPayApi(): Promise<VeilPayApi> {
     throw new VeilPayUnavailableError(readiness.missing)
   }
 
-  const apiUrl = pathToFileURL(join(VENDOR_ROOT, 'api', 'src', 'index.js')).href
-  const stackUrl = pathToFileURL(join(VENDOR_ROOT, 'cli', 'src', 'gateway-stack.js')).href
+  const bootstrapUrl = pathToFileURL(join(VENDOR_ROOT, 'gateway-bootstrap.mjs')).href
+  const { VeilPayAPI, buildGatewayStack } = (await dynamicImport(bootstrapUrl)) as {
+    VeilPayAPI: { join(providers: unknown, address: string, logger?: unknown): Promise<VeilPayApi> }
+    buildGatewayStack: (
+      logger?: { info: (m: string) => void; warn?: (m: string) => void },
+      opts?: { privateStateStoreName?: string },
+    ) => Promise<{ providers: unknown; close: () => Promise<void> }>
+  }
 
-  const [{ VeilPayAPI }, { buildGatewayStack }] = (await Promise.all([
-    dynamicImport(apiUrl),
-    dynamicImport(stackUrl),
-  ])) as [
-    { VeilPayAPI: { join(providers: unknown, address: string): Promise<VeilPayApi> } },
-    { buildGatewayStack: () => Promise<unknown> },
-  ]
+  const stack = await buildGatewayStack({
+    info: (m) => console.log(`[veilpay] ${m}`),
+    warn: (m) => console.warn(`[veilpay] ${m}`),
+  })
 
-  const providers = await buildGatewayStack()
-  return VeilPayAPI.join(providers, VEILPAY_CONTRACT_ADDRESS)
+  // midnight-js requires the address WITHOUT the 0x prefix.
+  const address = VEILPAY_CONTRACT_ADDRESS.replace(/^0x/, '')
+  return VeilPayAPI.join(stack.providers, address)
 }
 
 /** Get (or build) the joined VeilPay API instance. Throws if not configured. */
@@ -158,20 +163,37 @@ export function getVeilPayAPI(): Promise<VeilPayApi> {
   return globalThis.__veilpay_api_promise__
 }
 
-/** Read the current ledger sequence (used to anchor intent TTLs). */
-export async function getLedgerSequence(api: VeilPayApi): Promise<number> {
+/** Parsed ledger shape produced by the managed contract's ledger() function. */
+interface ParsedLedger {
+  sequence: bigint
+  intents: {
+    member(id: bigint): boolean
+    lookup(id: bigint): VeilPayLedgerIntent
+  }
+}
+
+async function readLedger(api: VeilPayApi): Promise<ParsedLedger> {
   const providers = api.providers as {
     publicDataProvider: {
-      queryContractState(contract: unknown): Promise<{ data: { ledger: { sequence: number } } } | null>
+      queryContractState(contract: unknown): Promise<{ data: unknown } | null>
     }
   }
   const state = await providers.publicDataProvider.queryContractState(
     api.deployedContractAddress,
   )
-  if (!state?.data?.ledger) {
+  if (!state?.data) {
     throw new Error('Unable to read VeilPay contract ledger state from the indexer.')
   }
-  return Number(state.data.ledger.sequence)
+  const { ledger } = (await dynamicImport(
+    pathToFileURL(join(VENDOR_ROOT, 'contract', 'src', 'managed', 'veilpay', 'contract', 'index.js')).href,
+  )) as { ledger: (data: unknown) => ParsedLedger }
+  return ledger(state.data)
+}
+
+/** Read the current ledger sequence (used to anchor intent TTLs). */
+export async function getLedgerSequence(api: VeilPayApi): Promise<number> {
+  const ledgerState = await readLedger(api)
+  return Number(ledgerState.sequence)
 }
 
 function readStatusTag(status: unknown): VeilPayChainStatus {
@@ -187,21 +209,11 @@ export async function getChainIntent(
   api: VeilPayApi,
   chainIntentId: string,
 ): Promise<VeilPayChainIntent | null> {
-  const providers = api.providers as {
-    publicDataProvider: {
-      queryContractState(contract: unknown): Promise<{
-        data: { ledger: { sequence: number; intents: Map<bigint, VeilPayLedgerIntent> } }
-      } | null>
-    }
-  }
-  const state = await providers.publicDataProvider.queryContractState(
-    api.deployedContractAddress,
-  )
-  if (!state?.data?.ledger) return null
+  const ledgerState = await readLedger(api)
+  const id = BigInt(chainIntentId)
+  if (!ledgerState.intents.member(id)) return null
 
-  const raw = state.data.ledger.intents.get(BigInt(chainIntentId))
-  if (!raw) return null
-
+  const raw = ledgerState.intents.lookup(id)
   return {
     id: chainIntentId,
     status: readStatusTag(raw.status),
