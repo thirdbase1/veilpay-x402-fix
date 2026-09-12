@@ -438,6 +438,14 @@ export async function buildGatewayStack(logger, opts = {}) {
                     await sleep(waitMs);
                     continue;
                 }
+                // The gateway allows only one pending balance transaction per session;
+                // a 429 means a previous one has not expired yet. Wait it out.
+                if (res.status === 429 && attempt < 9) {
+                    const waitMs = Math.min(Number(/"retryAfterMs":(\d+)/.exec(body)?.[1] ?? 10_000), 30_000);
+                    logger.info(`gateway /balance-only 429 (balance tx pending), retrying in ${waitMs}ms`);
+                    await sleep(waitMs);
+                    continue;
+                }
                 throw new Error(`gateway /balance-only failed: ${res.status} ${body}`);
             }
             if (!json)

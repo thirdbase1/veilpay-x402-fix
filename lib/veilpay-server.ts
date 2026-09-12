@@ -197,11 +197,20 @@ export async function getLedgerSequence(api: VeilPayApi): Promise<number> {
 }
 
 function readStatusTag(status: unknown): VeilPayChainStatus {
-  if (typeof status === 'string') return status as VeilPayChainStatus
-  if (status && typeof status === 'object' && 'is' in (status as Record<string, unknown>)) {
-    return String((status as Record<string, unknown>).is) as VeilPayChainStatus
+  // The managed ledger stores IntentStatus as a numeric enum
+  // (ACTIVE = 0, PAID = 1, REFUNDED = 2, CANCELLED = 3).
+  const STATUS_NAMES: Record<string, VeilPayChainStatus> = {
+    '0': 'ACTIVE',
+    '1': 'PAID',
+    '2': 'REFUNDED',
+    '3': 'CANCELLED',
   }
-  return String(status) as VeilPayChainStatus
+  let value: unknown = status
+  if (value && typeof value === 'object' && 'is' in (value as Record<string, unknown>)) {
+    value = (value as Record<string, unknown>).is
+  }
+  const key = String(value)
+  return STATUS_NAMES[key] ?? (key as VeilPayChainStatus)
 }
 
 /** Read one intent directly from the on-chain ledger. */

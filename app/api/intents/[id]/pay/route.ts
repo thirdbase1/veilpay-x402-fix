@@ -11,6 +11,7 @@ import {
   isValidPaymentSecretHex,
   secretToBytes,
   VeilPayUnavailableError,
+  type VeilPayChainIntent,
 } from '@/lib/veilpay-server'
 
 export const dynamic = 'force-dynamic'
@@ -144,9 +145,15 @@ export async function POST(
     // 5. Submit the real pay circuit call through the authenticated gateway
     await api.pay(chainId, secretToBytes(paymentSecret))
 
-    // 6. Confirm settlement from the ledger
-    const after = await getChainIntent(api, meta.chainIntentId)
-    const settled = after?.status === 'PAID' || after?.status === 'REFUNDED'
+    // 6. Confirm settlement from the ledger. The indexer lags the block that
+    // settled the pay tx, so poll the ledger briefly before giving up.
+    let after: VeilPayChainIntent | null = null
+    let settled = false
+    for (let attempt = 0; attempt < 20 && !settled; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 3_000))
+      after = await getChainIntent(api, meta.chainIntentId)
+      settled = after?.status === 'PAID' || after?.status === 'REFUNDED'
+    }
 
     if (!settled) {
       return NextResponse.json(
@@ -194,6 +201,48 @@ export async function POST(
         { success: false, error: err.message, missingCapabilities: err.missing },
         { status: 503 },
       )
+    }
+    // The circuit can reject a pay ("intent not active") when the ledger read
+    // in the pre-check was stale and the intent was already paid. Re-check the
+    // ledger before surfacing a failure.
+    try {
+      const api = await getVeilPayAPI()
+      let verified = false
+      for (let attempt = 0; attempt < 10 && !verified; attempt++) {
+        if (attempt > 0) await new Promise((r) => setTimeout(r, 3_000))
+        const state = await getChainIntent(api, meta.chainIntentId)
+        verified = state?.status === 'PAID' || state?.status === 'REFUNDED'
+      }
+      if (verified) {
+        const now = new Date().toISOString()
+        await supabase
+          .from('payment_intents')
+          .update({ status: 'verified', updated_at: now })
+          .eq('id', id)
+
+        if (dbIntent.auth_user_id) {
+          await recordActivityEvent({
+            authUserId: dbIntent.auth_user_id,
+            intentId: id,
+            eventType: 'PAYMENT_VERIFIED',
+            title: 'Payment Verified',
+            description: `Payment intent ${id} (chain #${meta.chainIntentId}) was verified on-chain.`,
+            metadata: {
+              chainIntentId: meta.chainIntentId,
+              network: body.network || 'midnight-preprod',
+            },
+          })
+        }
+
+        return NextResponse.json({
+          success: true,
+          status: 'verified' as PaymentIntentStatus,
+          chainIntentId: meta.chainIntentId,
+          message: 'Payment verified against the VeilPay contract.',
+        })
+      }
+    } catch {
+      // fall through to the generic error response
     }
     const message = err instanceof Error ? err.message : 'Internal server error'
     return NextResponse.json({ success: false, error: message }, { status: 500 })
