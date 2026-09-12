@@ -30,6 +30,9 @@ export type WalletProviderId = string
 
 export interface DetectedWallet {
   id: WalletProviderId
+  /** Stable wallet identity (reverse-DNS, e.g. "io.lace.midnight"). Unlike
+   * `id` — the per-page-load injection key — this survives reloads. */
+  rdns?: string
   name: string
   description: string
   /** Wallet-provided icon URL (hosted resource or base64 data URL), when exposed. */
@@ -110,6 +113,7 @@ export function detectInjectedWallets(): DetectedWallet[] {
 
       found.push({
         id: key,
+        rdns: api.rdns,
         name,
         description: brand?.description ?? `Midnight wallet${api.apiVersion ? ` (API v${api.apiVersion})` : ''}`,
         icon: brand?.icon ?? (typeof api.icon === 'string' ? api.icon : undefined),

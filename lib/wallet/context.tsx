@@ -28,8 +28,14 @@ const WalletContext = createContext<WalletContextValue | undefined>(undefined)
 
 /** Remembers which extension the merchant connected through, so the session
  * can be silently restored after a page reload (the auth cookie alone makes
- * the UI look connected while the wallet context is empty). */
+ * the UI look connected while the wallet context is empty). We store the
+ * wallet's stable rdns — NOT the injection key, which is a fresh UUID on
+ * every page load and would never match after a reload. */
 const WALLET_ID_STORAGE_KEY = 'veilpay.connectedWalletId'
+
+function walletSessionKey(w: { rdns?: string; id: string }): string {
+  return w.rdns ?? w.id
+}
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<WalletConnectionStatus>('disconnected')
@@ -82,7 +88,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
             network: midnightPublicConfig.network || 'testnet',
           })
           setWalletId(wallet.id)
-          window.localStorage.setItem(WALLET_ID_STORAGE_KEY, wallet.id)
+          window.localStorage.setItem(WALLET_ID_STORAGE_KEY, walletSessionKey(wallet))
           setStatus('connected')
           return
         } catch (err) {
@@ -112,18 +118,22 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     const stored = window.localStorage.getItem(WALLET_ID_STORAGE_KEY)
     if (!stored) return
-    if (!detectInjectedWallets().some((w) => w.id === stored)) return
+
+    // Resolve the stored rdns back to THIS page load's injection key —
+    // v4 wallets inject under a new UUID every reload.
+    const wallet = detectInjectedWallets().find((w) => walletSessionKey(w) === stored)
+    if (!wallet) return
 
     let cancelled = false
     ;(async () => {
       try {
-        const { address } = await connectWalletApi(stored)
+        const { address } = await connectWalletApi(wallet.id)
         if (cancelled) return
         setAccount({
           address,
           network: midnightPublicConfig.network || 'testnet',
         })
-        setWalletId(stored)
+        setWalletId(wallet.id)
         setStatus('connected')
       } catch {
         // Restore is best-effort — the merchant can connect manually.
