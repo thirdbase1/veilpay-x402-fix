@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { shortPublicKey } from '@/lib/wallet/oneam-auth'
 import { User, LogOut, ChevronDown, CheckCircle2, Shield, Loader2 } from 'lucide-react'
 
 interface MerchantUserMenuProps {
@@ -11,7 +12,7 @@ interface MerchantUserMenuProps {
 
 export function MerchantUserMenu({ initialBusinessName }: MerchantUserMenuProps) {
   const router = useRouter()
-  const [email, setEmail] = useState<string | null>(null)
+  const [walletId, setWalletId] = useState<string | null>(null)
   const [businessName, setBusinessName] = useState<string | null>(initialBusinessName || null)
   const [isOpen, setIsOpen] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
@@ -24,7 +25,8 @@ export function MerchantUserMenu({ initialBusinessName }: MerchantUserMenuProps)
       } = await supabase.auth.getUser()
 
       if (user) {
-        setEmail(user.email ?? null)
+        const pubkey = user.user_metadata?.wallet_pubkey
+        setWalletId(typeof pubkey === 'string' ? pubkey : null)
 
         if (!businessName) {
           const { data: profile } = await supabase
@@ -54,7 +56,7 @@ export function MerchantUserMenu({ initialBusinessName }: MerchantUserMenuProps)
     }
   }
 
-  const displayName = businessName || email?.split('@')[0] || 'Merchant'
+  const displayName = businessName || (walletId ? shortPublicKey(walletId) : 'Merchant')
   const initial = displayName.charAt(0).toUpperCase()
 
   return (
@@ -88,9 +90,9 @@ export function MerchantUserMenu({ initialBusinessName }: MerchantUserMenuProps)
             <p className="mt-1 font-semibold text-xs text-foreground truncate">
               {displayName}
             </p>
-            {email && (
+            {walletId && (
               <p className="font-mono text-[11px] text-muted-foreground truncate">
-                {email}
+                {shortPublicKey(walletId)}
               </p>
             )}
           </div>

@@ -22,12 +22,26 @@ interface PayRequestBody {
   network?: string
 }
 
+interface DbIntentRow {
+  auth_user_id?: string | null
+  metadata?: { chainIntentId?: string; paymentSecret?: string; expiresAtOps?: string } | null
+  [key: string]: unknown
+}
+
 export async function POST(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
+  // Hoisted so the settlement-recovery path in `catch` can still reach them.
+  let id = ''
+  let supabase: Awaited<ReturnType<typeof createClient>> | null = null
+  let dbIntent: DbIntentRow | null = null
+  let meta: { chainIntentId?: string; paymentSecret?: string; expiresAtOps?: string } = {}
+  let body: PayRequestBody = {}
+
   try {
-    const { id } = await context.params
+    const params = await context.params
+    id = params.id
 
     if (!isValidIntentId(id)) {
       return NextResponse.json(
@@ -37,12 +51,13 @@ export async function POST(
     }
 
     // 1. Load the authoritative intent record
-    const supabase = await createClient()
-    const { data: dbIntent } = await supabase
+    supabase = await createClient()
+    const { data } = await supabase
       .from('payment_intents')
       .select('*')
       .eq('id', id)
       .maybeSingle()
+    dbIntent = (data as DbIntentRow) ?? null
 
     if (!dbIntent) {
       return NextResponse.json(
@@ -51,7 +66,7 @@ export async function POST(
       )
     }
 
-    const meta = (dbIntent.metadata ?? {}) as {
+    meta = (dbIntent.metadata ?? {}) as {
       chainIntentId?: string
       paymentSecret?: string
       expiresAtOps?: string
@@ -69,7 +84,7 @@ export async function POST(
     }
 
     // 2. The payment secret is the payer's credential — required, no wallet address.
-    const body: PayRequestBody = await request.json().catch(() => ({}))
+    body = await request.json().catch(() => ({}))
     const paymentSecret = body.paymentSecret?.trim()
 
     if (!isValidPaymentSecretHex(paymentSecret)) {
@@ -206,6 +221,8 @@ export async function POST(
     // in the pre-check was stale and the intent was already paid. Re-check the
     // ledger before surfacing a failure.
     try {
+      if (!supabase || !dbIntent || !meta.chainIntentId)
+        throw new Error('Payment intent state unavailable')
       const api = await getVeilPayAPI()
       let verified = false
       for (let attempt = 0; attempt < 10 && !verified; attempt++) {

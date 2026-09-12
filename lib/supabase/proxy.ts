@@ -31,7 +31,7 @@ export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname
   const isProtectedApp = path.startsWith('/app')
   const isOnboarding = path.startsWith('/onboarding')
-  const isAuthRoute = path.startsWith('/auth/login') || path.startsWith('/auth/signup')
+  const isAuthRoute = path.startsWith('/auth/login')
 
   // IMPORTANT: Avoid writing any logic between createServerClient and
   // supabase.auth.getUser(). A simple mistake could compromise security.
