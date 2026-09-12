@@ -26,7 +26,7 @@ import {
 
 export function PaymentIntentForm() {
   const router = useRouter()
-  const { account } = useWallet()
+  const { account, walletId } = useWallet()
 
   const amountId = useId()
   const amountMaxId = useId()
@@ -94,11 +94,17 @@ export function PaymentIntentForm() {
     setSubmitError(null)
 
     if (!isValid) return
+    if (!walletId) {
+      setSubmitError(
+        'Connect your Midnight wallet extension first — invoices are signed from your own wallet.',
+      )
+      return
+    }
 
     setIsSubmitting(true)
 
     try {
-      const res = await createPaymentIntentApi(conditions)
+      const res = await createPaymentIntentApi(conditions, walletId)
       // Navigate to the newly created payment intent route
       router.push(`/app/intents/${encodeURIComponent(res.intent.id)}`)
     } catch (err: unknown) {

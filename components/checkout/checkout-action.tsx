@@ -6,7 +6,8 @@ import {
   type CheckoutFlowState,
   submitCheckoutPayment,
 } from '@/lib/payments/payment-checkout'
-import { payIntentWithWallet } from '@/lib/wallet/pay'
+import { detectInjectedWallets } from '@/lib/wallet/detect'
+import type { PayerCoin } from '@/lib/veilpay/client'
 import {
   Lock,
   Loader2,
@@ -17,7 +18,24 @@ import {
   ExternalLink,
   KeyRound,
   Wallet,
+  Coins,
 } from 'lucide-react'
+
+/** The on-chain invoice id this checkout settles (registered at create time). */
+function chainIntentIdOf(intent: PaymentIntent): string {
+  const id = (intent as { chainIntentId?: string }).chainIntentId
+  if (!id) throw new Error('This invoice has no on-chain registration to settle against.')
+  return id
+}
+
+/**
+ * Pick the shielded coin the pay circuit will spend. Coin discovery inside
+ * the extension API has not shipped (docs/MIGRATION-V2-INVOICE.md "Payer
+ * funding caveat"), so this returns null until payer funding lands.
+ */
+async function selectPayerCoin(_intent: PaymentIntent): Promise<PayerCoin | null> {
+  return null
+}
 
 interface CheckoutActionProps {
   intent: PaymentIntent
@@ -25,14 +43,16 @@ interface CheckoutActionProps {
 }
 
 /**
- * Read the one-time payment secret from the checkout link fragment (#ps=...).
- * Fragments are never sent to the server, so the secret stays out of logs.
+ * Read the claim code from the checkout link. Per the v2 invoice vocabulary
+ * the canonical form is `pay/<id>?secret=<hex>`; the `#ps=` fragment variant
+ * is also accepted (fragments are never sent to the server, so the secret
+ * stays out of logs entirely).
  */
 function readSecretFromLink(): string | null {
   if (typeof window === 'undefined') return null
-  const hash = window.location.hash
-  if (!hash.startsWith('#ps=')) return null
-  const secret = decodeURIComponent(hash.slice(4)).trim()
+  const fromQuery = new URLSearchParams(window.location.search).get('secret')
+  const candidate = (fromQuery ?? window.location.hash.replace(/^#ps=/, '')).trim()
+  const secret = decodeURIComponent(candidate)
   return /^[0-9a-fA-F]{64}$/.test(secret) ? secret : null
 }
 
@@ -69,21 +89,39 @@ export function CheckoutAction({
       // Step 1: Preparing Payment
       setFlowState('PREPARING_PAYMENT')
 
-      // Step 2: Connect the wallet extension (user approves the session)…
+      // Step 2: v2 settlement spends a real shielded coin from the payer's
+      // synced wallet (docs/MIGRATION-V2-INVOICE.md "Payer funding caveat").
+      // The extension API does not expose coin discovery yet, so until payer
+      // funding lands there is no coin to spend — surface the honest funding
+      // state instead of faking a settlement or leaking an unshielded transfer.
+      const coin = await selectPayerCoin(intent)
+      if (!coin) {
+        setFlowState('FUNDING_REQUIRED')
+        setErrorMessage(
+          'Shielded settlement needs one funded, synced coin of the matching token color in your wallet. Payer coin discovery has not shipped yet — this invoice cannot be settled from the browser until then.',
+        )
+        return
+      }
+
+      // Step 3: Connect the wallet extension (user approves the session), then
+      // prove + submit the pay circuit call. The wallet pops its native
+      // approval dialog for the shielded spend (change returns to the payer).
       setFlowState('CONNECTING_WALLET')
+      const { payInvoice } = await import('@/lib/veilpay/client')
+      const wallets = detectInjectedWallets()
+      if (wallets.length === 0) {
+        throw new Error(
+          'No Midnight wallet extension detected. Install Lace or the 1AM wallet, then reload this page.',
+        )
+      }
+      const txReference = await payInvoice(wallets[0].id, {
+        chainIntentId: chainIntentIdOf(intent),
+        paymentSecret,
+        coin,
+      }).then(() => `shielded_pay_${intent.id}`)
 
-      // Step 3: …then request the transfer. The wallet pops its native
-      // approval dialog showing the exact token amount and merchant recipient
-      // (dApp-connector makeTransfer → submitTransaction).
-      const { txReference } = await payIntentWithWallet({
-        recipient: intent.conditions.recipient,
-        amount: intent.conditions.amount.amount,
-        asset: intent.conditions.amount.asset,
-        onAwaitingApproval: () => setFlowState('AWAITING_WALLET_APPROVAL'),
-      })
-
-      // Step 4: Broadcast done — submit the tx reference + payment secret to
-      // the VeilPay gateway for on-chain condition verification.
+      // Step 4: Broadcast done — the server verifies the invoice settled on
+      // the public ledger (receipt commitment present, status PAID).
       setFlowState('SUBMITTING_PAYMENT')
       const response = await submitCheckoutPayment(intent.id, {
         paymentSecret,
@@ -163,7 +201,7 @@ export function CheckoutAction({
               {flowState === 'PREPARING_PAYMENT' && 'Preparing private payment conditions...'}
               {flowState === 'CONNECTING_WALLET' && 'Connecting your Midnight wallet...'}
               {flowState === 'AWAITING_WALLET_APPROVAL' && 'Approve the payment in your wallet...'}
-              {flowState === 'SUBMITTING_PAYMENT' && 'Submitting payment to the VeilPay contract...'}
+              {flowState === 'SUBMITTING_PAYMENT' && 'Verifying settlement on the public ledger...'}
               {flowState === 'GENERATING_PROOF' && 'Generating zero-knowledge verification proof...'}
               {flowState === 'VERIFYING_PAYMENT' && 'Verifying payment against contract conditions...'}
             </span>
@@ -264,8 +302,33 @@ export function CheckoutAction({
         </div>
       )}
 
+      {/* Honest Protocol State: Payer Funding Required */}
+      {flowState === 'FUNDING_REQUIRED' && (
+        <div
+          role="region"
+          aria-label="Payer Funding Status"
+          className="rounded-2xl border border-warning/30 bg-warning/10 p-5 space-y-3"
+        >
+          <div className="flex items-start gap-2.5">
+            <Coins className="size-4 text-warning shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="space-y-1">
+              <h4 className="font-mono text-xs font-semibold text-foreground">
+                Payer Coin Funding Required
+              </h4>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {errorMessage}
+              </p>
+              <p className="text-[11px] text-muted-foreground/80 leading-relaxed">
+                v2 invoices settle with a shielded coin spend — the app never moves unshielded
+                tDUST as a substitute, and never sponsors anyone&apos;s fees.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Error State */}
-      {errorMessage && flowState !== 'INTEGRATION_PENDING' && (
+      {errorMessage && flowState !== 'INTEGRATION_PENDING' && flowState !== 'FUNDING_REQUIRED' && (
         <div
           role="alert"
           className="rounded-xl border border-destructive/30 bg-destructive/20 p-4 space-y-2 text-xs text-destructive"

@@ -104,16 +104,46 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
 
 export async function createPaymentIntentApi(
   conditions: PaymentConditions,
+  walletId: string | null,
 ): Promise<{ intent: PaymentIntent; midnightStatus: 'published' | 'integration_pending' }> {
+  if (!walletId) {
+    throw new Error(
+      'Connect your Midnight wallet extension first — invoices are signed from your own wallet.',
+    )
+  }
+
+  // Per docs/MIGRATION-V2-INVOICE.md: the invoice is issued client-side (the
+  // wallet signs createIntent), then the server verifies it against the
+  // public ledger and registers its metadata.
+  const { issueInvoice } = await import('@/lib/veilpay/client')
+  const { parseDecimalToMicroUnits } = await import('@/lib/payments/intent')
+
+  const amountMicro = parseDecimalToMicroUnits(conditions.amount.amount)
+  if (amountMicro === null || amountMicro <= 0n) {
+    throw new Error('Amount must be a positive decimal number with at most 6 decimal places.')
+  }
+
+  const issued = await issueInvoice(walletId, {
+    amountMicro,
+    ttlOps: 50,
+  })
+
   const res = await fetch('/api/intents', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ conditions }),
+    body: JSON.stringify({
+      conditions,
+      chainIntentId: issued.chainIntentId,
+      paymentSecret: issued.paymentSecret,
+      merchantCoinPk: issued.merchantCoinPk,
+      tokenColor: issued.tokenColor,
+      expiresAtOps: issued.expiresAtOps,
+    }),
   })
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }))
-    throw new Error(err.error || err.message || 'Failed to create payment intent')
+    throw new Error(err.error || err.message || 'Failed to register payment intent')
   }
 
   return res.json()

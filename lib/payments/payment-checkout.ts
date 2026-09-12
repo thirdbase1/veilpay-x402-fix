@@ -21,6 +21,7 @@ export type CheckoutFlowState =
   | 'EXPIRED'
   | 'CANCELLED'
   | 'INTEGRATION_PENDING'
+  | 'FUNDING_REQUIRED'
 
 export interface PaySubmitResponse {
   success: boolean

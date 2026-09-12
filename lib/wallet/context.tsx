@@ -15,6 +15,8 @@ import { detectInjectedWallets, connectWalletApi } from './detect'
 interface WalletContextValue {
   status: WalletConnectionStatus
   account: WalletAccount | null
+  /** Id of the injected provider this account was connected through. */
+  walletId: string | null
   error: string | null
   isExtensionDetected: boolean
   connect: () => Promise<void>
@@ -27,6 +29,7 @@ const WalletContext = createContext<WalletContextValue | undefined>(undefined)
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<WalletConnectionStatus>('disconnected')
   const [account, setAccount] = useState<WalletAccount | null>(null)
+  const [walletId, setWalletId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isExtensionDetected, setIsExtensionDetected] = useState(false)
 
@@ -73,6 +76,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
             address,
             network: midnightPublicConfig.network || 'testnet',
           })
+          setWalletId(wallet.id)
           setStatus('connected')
           return
         } catch (err) {
@@ -95,6 +99,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const disconnect = useCallback(() => {
     setAccount(null)
+    setWalletId(null)
     setStatus('disconnected')
     setError(null)
   }, [])
@@ -108,6 +113,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       value={{
         status,
         account,
+        walletId,
         error,
         isExtensionDetected,
         connect,
@@ -123,6 +129,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 const defaultWalletValue: WalletContextValue = {
   status: 'disconnected',
   account: null,
+  walletId: null,
   error: null,
   isExtensionDetected: false,
   connect: async () => {},
