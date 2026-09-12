@@ -21,7 +21,7 @@ import { pathToFileURL } from 'node:url'
 /** Deployed VeilPay contract on Midnight preprod (from the repo README). */
 export const VEILPAY_CONTRACT_ADDRESS =
   process.env.VEILPAY_CONTRACT_ADDRESS?.trim() ||
-  '0x304666ce6f7c9e0f5cbff0705087c7d9eda32a4b1e8943d19d60a5066dfe5c9c'
+  '0x304666ce3bb47edab2267a88eb650330042e1d6b1bea347d8f391b3fd09d719f'
 
 export const VEILPAY_NETWORK = 'preprod'
 
