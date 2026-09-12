@@ -8,7 +8,6 @@ import {
   ReceiptText,
   Activity as ActivityIcon,
   PlusCircle,
-  FileCode2,
   ShieldCheck,
   ExternalLink,
 } from 'lucide-react'
@@ -29,8 +28,6 @@ export function DashboardSidebar({ onNavigate }: SidebarProps) {
     { href: '/app/activity', label: 'Activity', icon: ActivityIcon },
     { href: '/app/create', label: 'Create Payment', icon: PlusCircle },
   ]
-
-  const secondaryNav = [{ href: '/explorer', label: 'Public Explorer', icon: FileCode2 }]
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-border/70 bg-card/40 backdrop-blur-xl">
@@ -64,31 +61,6 @@ export function DashboardSidebar({ onNavigate }: SidebarProps) {
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition ${
                   isActive
                     ? 'bg-secondary text-foreground font-semibold shadow-inner'
-                    : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
-                }`}
-              >
-                <Icon className={`size-4 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
-                {item.label}
-              </Link>
-            )
-          })}
-        </div>
-
-        <div className="mt-8 space-y-1">
-          <p className="px-3 pb-2 text-[10px] font-mono uppercase tracking-wider text-muted-foreground/70">
-            Developer & Protocol
-          </p>
-          {secondaryNav.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onNavigate}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition ${
-                  isActive
-                    ? 'bg-secondary text-foreground font-semibold'
                     : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
                 }`}
               >
