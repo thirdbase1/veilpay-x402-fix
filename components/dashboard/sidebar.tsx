@@ -9,7 +9,6 @@ import {
   Activity as ActivityIcon,
   PlusCircle,
   FileCode2,
-  Settings,
   ShieldCheck,
   ExternalLink,
 } from 'lucide-react'
@@ -31,10 +30,7 @@ export function DashboardSidebar({ onNavigate }: SidebarProps) {
     { href: '/app/create', label: 'Create Payment', icon: PlusCircle },
   ]
 
-  const secondaryNav = [
-    { href: '/explorer', label: 'Public Explorer', icon: FileCode2 },
-    { href: '/app/settings', label: 'Settings', icon: Settings },
-  ]
+  const secondaryNav = [{ href: '/explorer', label: 'Public Explorer', icon: FileCode2 }]
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-border/70 bg-card/40 backdrop-blur-xl">
