@@ -27,9 +27,9 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -39,50 +39,50 @@
 }
 
 /*
-  VeilPay — "Midnight Vault"
-  A deep indigo-ink canvas with warm bone type. One amber signal carries value
-  and action; mint marks verified states, coral marks expiry. The redaction bar
-  is the signature motif — concealment made visible.
+  VeilPay — Linear-style dark.
+  Near-black neutral canvas, hairline white borders, one restrained indigo
+  accent. Mint = verified, orange = in-flight, red = expired. Density over
+  decoration: compact rows, tabular data, mono metadata.
 */
 :root {
   color-scheme: dark;
 
-  --background: oklch(0.145 0.03 274);
-  --foreground: oklch(0.96 0.01 90);
+  --background: oklch(0.155 0.004 286);
+  --foreground: oklch(0.965 0.002 286);
 
-  --card: oklch(0.185 0.032 274);
-  --card-foreground: oklch(0.96 0.01 90);
+  --card: oklch(0.19 0.005 286);
+  --card-foreground: oklch(0.965 0.002 286);
 
-  --popover: oklch(0.175 0.032 274);
-  --popover-foreground: oklch(0.96 0.01 90);
+  --popover: oklch(0.205 0.005 286);
+  --popover-foreground: oklch(0.965 0.002 286);
 
-  /* Amber signal — value, action, the seal */
-  --primary: oklch(0.8 0.15 78);
-  --primary-foreground: oklch(0.18 0.04 274);
+  /* Linear indigo — the single accent */
+  --primary: oklch(0.6 0.155 277);
+  --primary-foreground: oklch(0.98 0.002 286);
 
-  --secondary: oklch(0.24 0.035 274);
-  --secondary-foreground: oklch(0.96 0.01 90);
+  --secondary: oklch(0.235 0.005 286);
+  --secondary-foreground: oklch(0.965 0.002 286);
 
-  --muted: oklch(0.22 0.03 274);
-  --muted-foreground: oklch(0.7 0.02 274);
+  --muted: oklch(0.215 0.005 286);
+  --muted-foreground: oklch(0.655 0.012 275);
 
   /* Mint — verified / satisfied */
-  --accent: oklch(0.8 0.14 165);
-  --accent-foreground: oklch(0.18 0.04 274);
+  --accent: oklch(0.72 0.13 158);
+  --accent-foreground: oklch(0.15 0.005 286);
 
-  /* Coral — expired / destructive */
-  --destructive: oklch(0.66 0.19 25);
-  --destructive-foreground: oklch(0.97 0.01 90);
+  /* Red — expired / destructive */
+  --destructive: oklch(0.65 0.19 25);
+  --destructive-foreground: oklch(0.98 0.002 286);
 
   /* Orange — pending / in-flight */
-  --warning: oklch(0.78 0.13 60);
-  --warning-foreground: oklch(0.18 0.04 274);
+  --warning: oklch(0.76 0.14 60);
+  --warning-foreground: oklch(0.15 0.005 286);
 
-  --border: oklch(0.34 0.03 274 / 55%);
-  --input: oklch(0.34 0.03 274 / 65%);
-  --ring: oklch(0.8 0.15 78 / 55%);
+  --border: oklch(1 0 0 / 7%);
+  --input: oklch(1 0 0 / 10%);
+  --ring: oklch(0.6 0.155 277 / 50%);
 
-  --radius: 0.75rem;
+  --radius: 0.5rem;
 }
 
 @theme inline {
@@ -98,7 +98,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: 'ss01', 'cv01';
   }
   h1,
   h2,
@@ -109,16 +108,16 @@
 }
 
 @layer utilities {
-  /* Fine cryptographic grid, used sparingly for technical depth */
+  /* Fine technical grid, barely visible — depth without noise */
   .veil-grid {
     background-image:
-      linear-gradient(to right, oklch(0.34 0.03 274 / 20%) 1px, transparent 1px),
-      linear-gradient(to bottom, oklch(0.34 0.03 274 / 20%) 1px, transparent 1px);
-    background-size: 44px 44px;
+      linear-gradient(to right, oklch(1 0 0 / 2.5%) 1px, transparent 1px),
+      linear-gradient(to bottom, oklch(1 0 0 / 2.5%) 1px, transparent 1px);
+    background-size: 32px 32px;
   }
 
   .veil-radial {
-    background: radial-gradient(60% 50% at 50% 0%, oklch(0.8 0.15 78 / 10%), transparent 70%);
+    background: radial-gradient(60% 50% at 50% 0%, oklch(0.6 0.155 277 / 8%), transparent 70%);
   }
 
   /* Signature motif: a redaction bar — concealment made visible. */
@@ -134,8 +133,8 @@
 
   .veil-glow {
     box-shadow:
-      0 0 0 1px oklch(0.8 0.15 78 / 18%),
-      0 18px 50px -20px oklch(0.8 0.15 78 / 35%);
+      0 0 0 1px oklch(0.6 0.155 277 / 20%),
+      0 16px 48px -20px oklch(0.6 0.155 277 / 40%);
   }
 
   .text-balance {
@@ -145,7 +144,7 @@
   @keyframes veil-enter {
     from {
       opacity: 0;
-      transform: translateY(12px);
+      transform: translateY(8px);
     }
     to {
       opacity: 1;
@@ -154,7 +153,7 @@
   }
 
   .veil-enter {
-    animation: veil-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: veil-enter 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 }
 

@@ -110,7 +110,7 @@ export default function MerchantOverviewPage() {
           className="veil-grid pointer-events-none absolute inset-0 opacity-40 [mask-image:linear-gradient(to_bottom,black,transparent_45%)]"
         />
 
-        <div className="relative space-y-10 p-4 sm:p-8">
+        <div className="relative space-y-6 p-4 sm:p-6">
           {/* Error notification if protocol query fails */}
           {error && (
             <div

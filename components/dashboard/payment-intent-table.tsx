@@ -87,12 +87,12 @@ export function PaymentIntentTable({
         <table className="w-full text-left text-xs">
           <thead className="border-b border-border/70 text-[10px] font-mono uppercase tracking-[0.16em] text-muted-foreground/80">
             <tr>
-              <th scope="col" className="px-5 py-3.5 font-medium">Status</th>
-              <th scope="col" className="px-5 py-3.5 font-medium">Intent ID & Ref</th>
-              <th scope="col" className="px-5 py-3.5 font-medium">Requirement</th>
-              <th scope="col" className="px-5 py-3.5 font-medium">Created</th>
-              <th scope="col" className="px-5 py-3.5 font-medium">Expires</th>
-              <th scope="col" className="px-5 py-3.5 text-right font-medium">Actions</th>
+              <th scope="col" className="px-4 py-2.5 font-medium">Status</th>
+              <th scope="col" className="px-4 py-2.5 font-medium">Intent ID & Ref</th>
+              <th scope="col" className="px-4 py-2.5 font-medium">Requirement</th>
+              <th scope="col" className="px-4 py-2.5 font-medium">Created</th>
+              <th scope="col" className="px-4 py-2.5 font-medium">Expires</th>
+              <th scope="col" className="px-4 py-2.5 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50">
@@ -119,12 +119,12 @@ export function PaymentIntentTable({
               return (
                 <tr
                   key={intent.id}
-                  className="group transition hover:bg-card/60"
+                  className="group transition hover:bg-secondary/40"
                 >
-                  <td className="whitespace-nowrap px-5 py-3.5">
+                  <td className="whitespace-nowrap px-4 py-2.5">
                     <PaymentIntentStatusBadge status={intent.status} />
                   </td>
-                  <td className="whitespace-nowrap px-5 py-3.5">
+                  <td className="whitespace-nowrap px-4 py-2.5">
                     <div className="flex items-center gap-1.5 font-mono">
                       <Link
                         href={`/app/intents/${intent.id}`}
@@ -160,7 +160,7 @@ export function PaymentIntentTable({
                       </p>
                     )}
                   </td>
-                  <td className="whitespace-nowrap px-5 py-3.5 text-foreground font-sans">
+                  <td className="whitespace-nowrap px-4 py-2.5 text-foreground font-sans">
                     <div className="font-medium">
                       {describeAmountCondition(intent.conditions)}
                     </div>
@@ -168,15 +168,15 @@ export function PaymentIntentTable({
                       Asset: {intent.conditions.amount.asset}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-5 py-3.5 text-muted-foreground font-sans">
+                  <td className="whitespace-nowrap px-4 py-2.5 text-muted-foreground font-sans">
                     {formattedDate}
                   </td>
-                  <td className="whitespace-nowrap px-5 py-3.5 text-muted-foreground font-sans">
+                  <td className="whitespace-nowrap px-4 py-2.5 text-muted-foreground font-sans">
                     <span className={isExpired && intent.status === 'awaiting_payment' ? 'text-warning font-medium' : ''}>
                       {formattedExpiry}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-5 py-3.5 text-right">
+                  <td className="whitespace-nowrap px-4 py-2.5 text-right">
                     <PaymentIntentRowActions
                       intent={intent}
                       onCancelClick={(target) => setIntentToCancel(target)}

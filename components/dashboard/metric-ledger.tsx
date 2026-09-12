@@ -29,8 +29,8 @@ export function MetricLedger({ items, isLoading = false }: MetricLedgerProps) {
         return (
           <div
             key={item.label}
-            className="veil-enter bg-card/60 p-5 transition-colors duration-300 hover:bg-card sm:p-6"
-            style={{ animationDelay: `${i * 70}ms` }}
+            className="veil-enter bg-card/60 p-4 transition-colors duration-300 hover:bg-card"
+            style={{ animationDelay: `${i * 60}ms` }}
           >
             <div className="flex items-center gap-2">
               <span aria-hidden="true" className={`size-1.5 rounded-[2px] ${tone.tick}`} />
@@ -39,15 +39,15 @@ export function MetricLedger({ items, isLoading = false }: MetricLedgerProps) {
               </p>
             </div>
             {isLoading ? (
-              <div className="mt-4 h-10 w-16 animate-pulse rounded-md bg-muted/40" />
+              <div className="mt-3 h-8 w-14 animate-pulse rounded-md bg-muted/40" />
             ) : (
               <p
-                className={`mt-3 font-display text-4xl font-semibold tracking-tight tabular-nums sm:text-5xl ${tone.value}`}
+                className={`mt-2.5 font-display text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl ${tone.value}`}
               >
                 {item.value}
               </p>
             )}
-            <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">{item.subtext}</p>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">{item.subtext}</p>
           </div>
         )
       })}

@@ -30,9 +30,9 @@ export function DashboardSidebar({ onNavigate }: SidebarProps) {
   ]
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-border/60 bg-card/30 backdrop-blur-xl">
+    <aside className="flex h-full w-56 flex-col border-r border-border/60 bg-card/40">
       {/* Brand Header */}
-      <div className="flex h-16 items-center justify-between border-b border-border/50 px-5">
+      <div className="flex h-14 items-center justify-between border-b border-border/50 px-4">
         <Link href="/" className="inline-flex items-center gap-2" onClick={onNavigate}>
           <BrandWordmark />
         </Link>
@@ -57,7 +57,7 @@ export function DashboardSidebar({ onNavigate }: SidebarProps) {
                 href={item.href}
                 onClick={onNavigate}
                 className={cn(
-                  'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition',
+                  'group relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium transition',
                   isActive
                     ? 'bg-primary/10 text-foreground'
                     : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
@@ -79,7 +79,7 @@ export function DashboardSidebar({ onNavigate }: SidebarProps) {
         </nav>
 
         {/* Privacy Note */}
-        <div className="relative mt-8 overflow-hidden rounded-xl border border-border/50 bg-background/40 p-3.5">
+        <div className="relative mt-6 overflow-hidden rounded-lg border border-border/50 bg-background/40 p-3">
           <span
             aria-hidden="true"
             className="veil-redact absolute inset-x-3.5 top-0 h-0.5 text-primary/40"
@@ -96,8 +96,8 @@ export function DashboardSidebar({ onNavigate }: SidebarProps) {
       </div>
 
       {/* Bottom Network Status */}
-      <div className="border-t border-border/50 p-4">
-        <div className="rounded-xl border border-border/50 bg-card/50 p-3">
+      <div className="border-t border-border/50 p-3">
+        <div className="rounded-lg border border-border/50 bg-card/50 p-2.5">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
               Midnight
