@@ -162,28 +162,6 @@
     animation: veil-enter 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
-  /*
-   * Redacted reveal: a solid bar covers the text, then wipes away in
-   * reading order (origin right collapses leftward, revealing left first).
-   */
-  .redact-bar {
-    transform: scaleX(1);
-    transform-origin: right center;
-  }
-
-  .redact-bar-run {
-    animation: redact-wipe 0.7s cubic-bezier(0.65, 0, 0.35, 1) both;
-  }
-
-  @keyframes redact-wipe {
-    from {
-      transform: scaleX(1);
-    }
-    to {
-      transform: scaleX(0);
-    }
-  }
-
   /* Slow light sheen sweeping across the brand mark's facets, every 7s. */
   @keyframes mark-sheen {
     0%,

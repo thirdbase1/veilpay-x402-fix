@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { ArrowRight, BookOpen } from 'lucide-react'
 import { VerificationFlow } from '@/components/payment-flow/verification-flow'
 import { Reveal } from '@/components/site/reveal'
-import { RedactedReveal } from '@/components/site/redacted-reveal'
+import { DecryptText } from '@/components/site/decrypt-text'
+import { VeilCanvas } from '@/components/site/veil-canvas'
 import { routes } from '@/lib/config'
 
 export function Hero() {
@@ -16,6 +17,7 @@ export function Hero() {
         aria-hidden="true"
       />
       <div className="veil-radial pointer-events-none absolute inset-0" aria-hidden="true" />
+      <VeilCanvas className="pointer-events-none absolute inset-0 h-full w-full opacity-70 [mask-image:linear-gradient(to_bottom,black_55%,transparent)]" />
 
       <div className="relative mx-auto grid w-full max-w-6xl grid-cols-1 gap-12 px-5 pb-20 sm:px-8 sm:pb-28 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-10">
         <div>
@@ -27,11 +29,9 @@ export function Hero() {
           </Reveal>
 
           <h1 className="mt-6 text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
-            <RedactedReveal delay={150}>Private payments.</RedactedReveal>
+            <DecryptText text="Private payments." delay={200} />
             <br />
-            <RedactedReveal delay={450}>
-              <span className="text-primary">Public confidence.</span>
-            </RedactedReveal>
+            <DecryptText text="Public confidence." delay={700} className="text-primary" />
           </h1>
 
           <Reveal delay={160}>
