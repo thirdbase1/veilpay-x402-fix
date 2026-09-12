@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { PlusCircle, Menu } from 'lucide-react'
-import { WalletButton } from './wallet-button'
 import { MerchantUserMenu } from './merchant-user-menu'
 import { NotificationPopover } from './notification-popover'
 import { useDashboardNav } from './dashboard-layout'
@@ -59,8 +58,6 @@ export function DashboardHeader({
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         <NotificationPopover />
-
-        <WalletButton />
 
         <MerchantUserMenu />
 

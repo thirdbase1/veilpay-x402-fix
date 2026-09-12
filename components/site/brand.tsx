@@ -1,28 +1,21 @@
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 /**
- * VeilPay mark: a solid amber tile with dark redaction bars cutting across it —
- * concealment made visible. The redaction bar is the brand's signature motif.
+ * VeilPay mark: the official 3D "V" brand asset, with a slow diagonal
+ * light sheen sweeping across the facets — the veil catching light.
  */
 export function BrandMark({ className }: { className?: string }) {
   return (
     <span
       aria-hidden="true"
       className={cn(
-        'relative inline-flex size-7 items-center justify-center overflow-hidden rounded-lg bg-primary text-primary-foreground shadow-[0_6px_20px_-8px_oklch(0.8_0.15_78/0.7)]',
+        'relative inline-flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-black ring-1 ring-white/10',
         className,
       )}
     >
-      <svg viewBox="0 0 24 24" fill="none" className="size-4">
-        <path d="M3 9h18" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-        <path
-          d="M3 15h11"
-          stroke="currentColor"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          opacity="0.55"
-        />
-      </svg>
+      <Image src="/veilpay-logo.png" alt="" width={28} height={28} className="size-full object-cover" priority />
+      <span className="veil-sheen pointer-events-none absolute inset-0" />
     </span>
   )
 }
