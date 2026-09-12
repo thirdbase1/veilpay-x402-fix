@@ -67,7 +67,7 @@ export function DashboardHeader({
         {action && (
           <Link
             href={action.href}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-2 sm:px-3.5"
+            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-primary px-3.5 text-xs font-medium text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-2"
           >
             <PlusCircle className="size-3.5" />
             <span className="hidden sm:inline">{action.label}</span>
