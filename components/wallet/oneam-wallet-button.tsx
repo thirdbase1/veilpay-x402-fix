@@ -57,6 +57,9 @@ export function OneAmWalletButton({ className }: OneAmWalletButtonProps) {
     setMenuOpen(false)
     try {
       await createClient().auth.signOut()
+      // Also drop the remembered wallet connection so the next connect is a
+      // fresh sign-in instead of a silent session restore.
+      window.localStorage.removeItem('veilpay.connectedWalletId')
       router.refresh()
     } finally {
       setSigningOut(false)

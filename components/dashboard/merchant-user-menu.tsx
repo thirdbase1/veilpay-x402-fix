@@ -49,6 +49,9 @@ export function MerchantUserMenu({ initialBusinessName }: MerchantUserMenuProps)
     try {
       const supabase = createClient()
       await supabase.auth.signOut()
+      // Also drop the remembered wallet connection so the next visit starts
+      // from a clean connect instead of silently restoring the session.
+      window.localStorage.removeItem('veilpay.connectedWalletId')
       router.push('/auth/login')
       router.refresh()
     } catch {

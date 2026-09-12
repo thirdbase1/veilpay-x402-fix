@@ -144,7 +144,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid challenge. Please try again.' }, { status: 401 })
     }
 
-    const identity = `${walletId}:${address.toLowerCase()}`
+    // The account identity must be the wallet ADDRESS alone. The walletId is
+    // the extension's per-page-load injection key (a fresh UUID for v4 wallets
+    // on every reload) — including it minted a different account each visit,
+    // losing the merchant profile and forcing onboarding again.
+    const identity = address.toLowerCase()
     const email = `wallet-${createHmac('sha256', secret).update(`veilpay-wallet-id:${identity}`).digest('hex')}@wallet.veilpay.app`
     const password = createHmac('sha256', secret)
       .update(`veilpay-wallet-session:${identity}`)
