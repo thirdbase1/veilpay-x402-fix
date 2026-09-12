@@ -83,7 +83,7 @@ export async function GET(request: Request) {
       )
     }
 
-    // Query persistent payment intents strictly owned by this merchant user
+    // Query persistent invoices strictly owned by this merchant user
     let query = supabase
       .from('payment_intents')
       .select('*', { count: 'exact' })
@@ -130,7 +130,7 @@ export async function GET(request: Request) {
     const { data: dbIntents, count, error } = await query
 
     if (error) {
-      return NextResponse.json({ error: 'Failed to retrieve payment intents' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to retrieve invoices' }, { status: 500 })
     }
 
     const total = count ?? dbIntents?.length ?? 0
@@ -397,7 +397,7 @@ export async function POST(request: Request) {
 
     if (insertError) {
       return NextResponse.json(
-        { error: 'Failed to persist payment intent to database' },
+        { error: 'Failed to persist invoice to database' },
         { status: 500 },
       )
     }

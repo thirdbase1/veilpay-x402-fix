@@ -6,7 +6,7 @@ import type {
 } from './types'
 
 /**
- * Client-facing typed service layer for VeilPay payment intents.
+ * Client-facing typed service layer for VeilPay invoices.
  * Communicates with the application API routes, which in turn interface
  * with the server store and the Midnight integration boundary.
  */
@@ -29,7 +29,7 @@ export interface ListPaymentIntentsResponse {
 }
 
 /**
- * Fetch paginated, filtered, and sorted payment intents from the authoritative API.
+ * Fetch paginated, filtered, and sorted invoices from the authoritative API.
  */
 export async function listPaymentIntents(
   params?: ListPaymentIntentsParams,
@@ -51,7 +51,7 @@ export async function listPaymentIntents(
   })
 
   if (!res.ok) {
-    throw new Error(`Failed to load payment intents: ${res.statusText}`)
+    throw new Error(`Failed to load invoices: ${res.statusText}`)
   }
 
   const data = await res.json()
@@ -82,9 +82,9 @@ export async function fetchPaymentIntent(id: string): Promise<PaymentIntent> {
   })
   if (!res.ok) {
     if (res.status === 404) {
-      throw new Error('Payment intent not found')
+      throw new Error('Invoice not found')
     }
-    throw new Error(`Failed to load payment intent: ${res.statusText}`)
+    throw new Error(`Failed to load invoice: ${res.statusText}`)
   }
   const data = await res.json()
   return data.intent as PaymentIntent
@@ -143,7 +143,7 @@ export async function createPaymentIntentApi(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }))
-    throw new Error(err.error || err.message || 'Failed to register payment intent')
+    throw new Error(err.error || err.message || 'Failed to register invoice')
   }
 
   return res.json()
@@ -157,7 +157,7 @@ export async function cancelPaymentIntentApi(id: string): Promise<PaymentIntent>
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }))
-    throw new Error(err.error || err.message || 'Failed to cancel payment intent')
+    throw new Error(err.error || err.message || 'Failed to cancel invoice')
   }
 
   const data = await res.json()

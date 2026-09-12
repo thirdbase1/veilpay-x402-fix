@@ -215,14 +215,14 @@ export default function ExplorerPage() {
               <ShieldCheck className="mx-auto size-8 text-muted-foreground/50" />
               <p className="mt-3 text-sm font-medium">No payments yet</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Registered payment intents will appear here the moment they are
+                Registered invoices will appear here the moment they are
                 created.
               </p>
               <Link
                 href="/app/create"
                 className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90"
               >
-                Create the first payment intent
+                Create the first invoice
               </Link>
             </div>
           ) : (

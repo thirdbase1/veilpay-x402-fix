@@ -36,7 +36,7 @@ export default function CustomerPayPage({ params }: PageProps) {
       setError(null)
       return data
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Unable to resolve payment intent'
+      const message = err instanceof Error ? err.message : 'Unable to resolve invoice'
       setError(message)
       return null
     } finally {
@@ -105,7 +105,7 @@ export default function CustomerPayPage({ params }: PageProps) {
           <div className="flex flex-col items-center gap-3 text-center">
             <Loader2 className="size-8 animate-spin text-primary" aria-hidden="true" />
             <p className="font-mono text-xs text-muted-foreground">
-              Resolving payment intent from VeilPay protocol...
+              Resolving invoice from VeilPay protocol...
             </p>
           </div>
         </main>

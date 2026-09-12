@@ -4,7 +4,7 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 export const dynamic = 'force-dynamic'
 
 /**
- * Public explorer feed. Serves a sanitized projection of every payment intent
+ * Public explorer feed. Serves a sanitized projection of every invoice
  * — the same data a block explorer would show: status, amount, asset, network,
  * masked recipient, and timestamps. No metadata, proofs, secrets, or merchant
  * account identifiers ever leave the server.

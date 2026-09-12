@@ -99,7 +99,7 @@ export default function MerchantOverviewPage() {
     <DashboardLayout>
       <DashboardHeader
         title="Overview"
-        description="Create, monitor, and manage privacy-preserving payment intents."
+        description="Create, monitor, and manage privacy-preserving invoices."
         action={{ href: '/app/create', label: 'Create Payment' }}
       />
 

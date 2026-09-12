@@ -1,7 +1,7 @@
 import type { PaymentIntent, MerchantAccount } from './types'
 
 /**
- * Authorization boundary for merchant payment intent access.
+ * Authorization boundary for merchant invoice access.
  *
  * In production VeilPay, intent read/write operations must be scoped to the
  * authenticated merchant identity (e.g. merchant wallet address or verified session).
@@ -40,7 +40,7 @@ export function checkIntentAccess(
     if (!isOwner) {
       return {
         authorized: false,
-        reason: 'Payment intent belongs to a different merchant address.',
+        reason: 'Invoice belongs to a different merchant address.',
       }
     }
   }

@@ -48,17 +48,17 @@ export async function POST(
       .maybeSingle()
 
     if (fetchError) {
-      return NextResponse.json({ error: 'Failed to retrieve payment intent' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to retrieve invoice' }, { status: 500 })
     }
 
     if (!dbIntent) {
-      return NextResponse.json({ error: 'Payment intent not found in protocol registry' }, { status: 404 })
+      return NextResponse.json({ error: 'Invoice not found in protocol registry' }, { status: 404 })
     }
 
     // Enforce merchant ownership server-side to prevent IDOR
     if (dbIntent.auth_user_id && dbIntent.auth_user_id !== user.id) {
       return NextResponse.json(
-        { error: 'Forbidden: You do not have permission to cancel this payment intent.' },
+        { error: 'Forbidden: You do not have permission to cancel this invoice.' },
         { status: 403 },
       )
     }
@@ -66,28 +66,28 @@ export async function POST(
     // Check if intent is in an eligible state for cancellation
     if (dbIntent.status === 'verified' || dbIntent.status === 'paid') {
       return NextResponse.json(
-        { error: 'Cannot cancel an already verified payment intent.' },
+        { error: 'Cannot cancel an already verified invoice.' },
         { status: 409 },
       )
     }
 
     if (dbIntent.status === 'expired') {
       return NextResponse.json(
-        { error: 'Cannot cancel an already expired payment intent.' },
+        { error: 'Cannot cancel an already expired invoice.' },
         { status: 409 },
       )
     }
 
     if (dbIntent.status === 'cancelled') {
       return NextResponse.json(
-        { error: 'This payment intent has already been cancelled.', code: 'ALREADY_CANCELLED' },
+        { error: 'This invoice has already been cancelled.', code: 'ALREADY_CANCELLED' },
         { status: 409 },
       )
     }
 
     if (dbIntent.status === 'failed') {
       return NextResponse.json(
-        { error: 'Cannot cancel a failed payment intent.' },
+        { error: 'Cannot cancel a failed invoice.' },
         { status: 409 },
       )
     }
@@ -202,8 +202,8 @@ export async function POST(
       authUserId: user.id,
       intentId: id,
       eventType: 'PAYMENT_INTENT_CANCELLED',
-      title: 'Payment Intent Cancelled',
-      description: `Payment intent ${id} was cancelled by merchant.`,
+      title: 'Invoice Cancelled',
+      description: `Invoice ${id} was cancelled by merchant.`,
       metadata: {
         amount: updatedDb.amount,
         asset: updatedDb.asset,

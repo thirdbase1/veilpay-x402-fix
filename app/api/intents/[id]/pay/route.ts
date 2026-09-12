@@ -51,7 +51,7 @@ export async function POST(
 
     if (!isValidIntentId(id)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid payment intent ID format' },
+        { success: false, error: 'Invalid invoice ID format' },
         { status: 400 },
       )
     }
@@ -67,7 +67,7 @@ export async function POST(
 
     if (!dbIntent) {
       return NextResponse.json(
-        { success: false, error: 'Payment intent not found in protocol registry' },
+        { success: false, error: 'Invoice not found in protocol registry' },
         { status: 404 },
       )
     }
@@ -79,7 +79,7 @@ export async function POST(
         {
           success: false,
           error:
-            'This payment intent is not registered on the VeilPay contract and cannot be paid.',
+            'This invoice is not registered on the VeilPay contract and cannot be paid.',
         },
         { status: 409 },
       )
@@ -92,7 +92,7 @@ export async function POST(
           success: false,
           status: 'cancelled',
           code: 'INTENT_CANCELLED',
-          error: 'This payment intent was cancelled by the merchant.',
+          error: 'This invoice was cancelled by the merchant.',
         },
         { status: 409 },
       )
@@ -114,7 +114,7 @@ export async function POST(
           success: false,
           status: 'expired',
           code: 'INTENT_EXPIRED',
-          error: 'This payment intent has expired and can no longer be paid.',
+          error: 'This invoice has expired and can no longer be paid.',
         },
         { status: 410 },
       )
@@ -185,7 +185,7 @@ export async function POST(
           success: false,
           status: 'cancelled',
           code: 'INTENT_CANCELLED',
-          error: 'This payment intent was cancelled by the merchant.',
+          error: 'This invoice was cancelled by the merchant.',
         },
         { status: 409 },
       )
@@ -208,7 +208,7 @@ export async function POST(
         intentId: id,
         eventType: 'PAYMENT_VERIFIED',
         title: 'Payment Verified',
-        description: `Payment intent ${id} (chain #${meta.chainIntentId}) was verified on-chain.`,
+        description: `Invoice ${id} (chain #${meta.chainIntentId}) was verified on-chain.`,
         metadata: {
           chainIntentId: meta.chainIntentId,
           network: body.network || 'midnight-preprod',

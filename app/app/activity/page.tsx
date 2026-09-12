@@ -217,7 +217,7 @@ export default function MerchantActivityPage() {
       <div className="flex flex-1 flex-col min-w-0">
         <DashboardHeader
           title="Activity & Audit Log"
-          description="Authoritative timeline of payment intent creation, verification, and settlement events."
+          description="Authoritative timeline of invoice creation, verification, and settlement events."
           action={{ href: '/app/create', label: 'Create Payment' }}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">
@@ -229,7 +229,7 @@ export default function MerchantActivityPage() {
                 <span>Merchant Activity Log</span>
               </h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Real-time cryptographic audit trail of all actions performed on your payment intents.
+                Real-time cryptographic audit trail of all actions performed on your invoices.
               </p>
             </div>
 
@@ -328,7 +328,7 @@ export default function MerchantActivityPage() {
                 className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-sm"
               >
                 <PlusCircle className="size-3.5" />
-                <span>Create First Payment Intent</span>
+                <span>Create First Invoice</span>
               </Link>
             </div>
           </div>

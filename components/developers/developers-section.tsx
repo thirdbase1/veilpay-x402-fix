@@ -16,8 +16,8 @@ export function DevelopersSection() {
           </Reveal>
           <Reveal delay={80}>
             <p className="mt-5 text-pretty leading-relaxed text-muted-foreground">
-              VeilPay is being designed with developer integration in mind — a typed payment
-              intent model and a clean boundary to the Midnight verification layer, so your
+              VeilPay is being designed with developer integration in mind — a typed invoice
+              model and a clean boundary to the Midnight verification layer, so your
               application can request exactly the verification it needs.
             </p>
           </Reveal>

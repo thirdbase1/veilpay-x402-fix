@@ -83,7 +83,7 @@ export default function PaymentIntentsListPage() {
         setTotalCount(result.total)
         setTotalPages(result.totalPages)
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Failed to retrieve payment intents'
+        const msg = err instanceof Error ? err.message : 'Failed to retrieve invoices'
         setError(msg)
       } finally {
         setIsLoading(false)
@@ -144,8 +144,8 @@ export default function PaymentIntentsListPage() {
   return (
     <DashboardLayout>
       <DashboardHeader
-        title="Payment Intents"
-        description="Search, filter, monitor, and cancel privacy-preserving payment intents."
+        title="Invoices"
+        description="Search, filter, monitor, and cancel privacy-preserving invoices."
         action={{ href: '/app/create', label: 'Create Payment' }}
       />
 

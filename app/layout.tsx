@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     'zero-knowledge',
     'ZK verification',
     'Midnight network',
-    'payment intent',
+    'invoice',
     'privacy-preserving payments',
   ],
   authors: [{ name: 'VeilPay' }],

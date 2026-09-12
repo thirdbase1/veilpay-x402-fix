@@ -5,7 +5,7 @@ import { WalletProvider } from '@/lib/wallet/context'
 
 export const metadata: Metadata = {
   title: 'Merchant Dashboard — VeilPay',
-  description: 'Manage and monitor privacy-preserving payment intents on Midnight.',
+  description: 'Manage and monitor privacy-preserving invoices on Midnight.',
   robots: { index: false },
 }
 

@@ -50,7 +50,7 @@ export default function PaymentIntentDetailPage({ params }: PageProps) {
       } catch (err: unknown) {
         if (isMountedRef.current) {
           const msg =
-            err instanceof Error ? err.message : 'Unable to load payment intent'
+            err instanceof Error ? err.message : 'Unable to load invoice'
           setError(msg)
         }
       } finally {
@@ -106,7 +106,7 @@ export default function PaymentIntentDetailPage({ params }: PageProps) {
   if (isLoading) {
     return (
       <DashboardLayout>
-        <DashboardHeader title="Payment Intent" />
+        <DashboardHeader title="Invoice" />
         <main className="flex-1 p-6 sm:p-8 max-w-6xl w-full mx-auto space-y-6">
           <div className="h-4 w-48 rounded bg-muted/40 animate-pulse" />
           <div className="flex items-center justify-between border-b border-border/60 pb-5">
@@ -135,7 +135,7 @@ export default function PaymentIntentDetailPage({ params }: PageProps) {
   if (error || !intent) {
     return (
       <DashboardLayout>
-        <DashboardHeader title="Payment Intent" />
+        <DashboardHeader title="Invoice" />
         <main className="flex-1 p-4 sm:p-8">
           <IntentNotFound id={id} error={error} />
         </main>
@@ -148,7 +148,7 @@ export default function PaymentIntentDetailPage({ params }: PageProps) {
       <DashboardHeader
         title="Intent Control Center"
         description="Verify cryptographic condition requirements and monitor zero-knowledge proof settlement."
-        action={{ href: '/app/create', label: 'Create Payment Intent' }}
+        action={{ href: '/app/create', label: 'Create Invoice' }}
       />
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 max-w-6xl w-full mx-auto">

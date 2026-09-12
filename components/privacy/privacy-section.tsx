@@ -8,7 +8,7 @@ const cards = [
     icon: Eye,
     tone: 'primary' as const,
     title: 'What the Merchant Needs',
-    items: ['Payment intent status', 'Required payment conditions', 'Verification result'],
+    items: ['Invoice status', 'Required payment conditions', 'Verification result'],
   },
   {
     icon: EyeOff,

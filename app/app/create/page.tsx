@@ -10,7 +10,7 @@ export default function CreatePaymentIntentPage() {
   return (
     <DashboardLayout>
       <DashboardHeader
-        title="Create Payment Intent"
+        title="Create Invoice"
         description="Define conditions for a privacy-preserving payment on Midnight."
         action={null}
       />
@@ -35,7 +35,7 @@ export default function CreatePaymentIntentPage() {
 
         <div>
           <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
-            Create a New Payment Intent
+            Create a New Invoice
           </h1>
           <p className="mt-1 text-xs text-muted-foreground max-w-xl">
             Configure the required asset amount, destination recipient, and optional deadline.

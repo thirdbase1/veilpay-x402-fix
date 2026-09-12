@@ -267,7 +267,7 @@ export default function OnboardingPage() {
                       className="w-full rounded-lg border border-border bg-background/80 py-2.5 px-3 font-mono text-xs text-foreground placeholder:text-muted-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
                     />
                     <p className="text-[11px] text-muted-foreground/80 leading-relaxed">
-                      You can override this recipient on individual payment intents at any time. If left blank, you will enter it during intent creation.
+                      You can override this recipient on individual invoices at any time. If left blank, you will enter it during intent creation.
                     </p>
                   </div>
 
@@ -314,7 +314,7 @@ export default function OnboardingPage() {
                     Privacy and Expiration Presets
                   </h1>
                   <p className="text-xs sm:text-sm text-muted-foreground">
-                    Configure standard defaults applied when generating new payment intents.
+                    Configure standard defaults applied when generating new invoices.
                   </p>
                 </div>
 

@@ -20,7 +20,7 @@ export async function GET(
 
     if (!isValidIntentId(id)) {
       return NextResponse.json(
-        { error: 'Invalid payment intent ID format' },
+        { error: 'Invalid invoice ID format' },
         { status: 400 },
       )
     }
@@ -54,7 +54,7 @@ export async function GET(
         }
         if (row.auth_user_id && row.auth_user_id !== user.id) {
           return NextResponse.json(
-            { error: 'Forbidden: You do not have permission to view this merchant payment intent.' },
+            { error: 'Forbidden: You do not have permission to view this merchant invoice.' },
             { status: 403 },
           )
         }
@@ -132,7 +132,7 @@ export async function GET(
     }
 
     if (!intent) {
-      return NextResponse.json({ error: 'Payment intent not found in protocol registry' }, { status: 404 })
+      return NextResponse.json({ error: 'Invoice not found in protocol registry' }, { status: 404 })
     }
 
     return NextResponse.json({ intent })

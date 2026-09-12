@@ -45,10 +45,10 @@ export async function getCheckoutIntent(id: string): Promise<PaymentIntent> {
 
   if (!res.ok) {
     if (res.status === 404) {
-      throw new Error('Payment intent not found in protocol registry')
+      throw new Error('Invoice not found in protocol registry')
     }
     const err = await res.json().catch(() => ({ error: res.statusText }))
-    throw new Error(err.error || `Failed to fetch payment intent: ${res.statusText}`)
+    throw new Error(err.error || `Failed to fetch invoice: ${res.statusText}`)
   }
 
   const data = await res.json()
@@ -56,7 +56,7 @@ export async function getCheckoutIntent(id: string): Promise<PaymentIntent> {
 }
 
 /**
- * Client service to submit a customer payment against an active payment intent.
+ * Client service to submit a customer payment against an active invoice.
  * The payment secret (from the checkout link fragment) is proven to the VeilPay
  * contract; no wallet address or other payer identity is required.
  */
