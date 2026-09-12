@@ -10,7 +10,7 @@ const nextConfig = {
   // a dynamic import that bypasses the bundler, so they must be traced into
   // the server output for production deployments.
   outputFileTracingIncludes: {
-    '/api/**/*': ['./vendor/veilpay/**/*'],
+    '/api/**/*': ['./vendor/veilpay/**/*', './node_modules/ws/**/*'],
   },
   async headers() {
     return [

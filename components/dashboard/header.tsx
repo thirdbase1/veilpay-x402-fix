@@ -45,8 +45,12 @@ export function DashboardHeader({
           <Menu className="size-4" />
         </button>
 
+        <span
+          aria-hidden="true"
+          className="hidden h-4 w-1 shrink-0 rounded-full bg-primary sm:block"
+        />
         <div className="min-w-0">
-          <h1 className="truncate font-display text-sm font-semibold tracking-tight text-foreground sm:text-base">
+          <h1 className="truncate font-display text-base font-semibold tracking-tight text-foreground sm:text-lg">
             {title}
           </h1>
           {description && (

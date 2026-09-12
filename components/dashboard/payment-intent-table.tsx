@@ -85,7 +85,7 @@ export function PaymentIntentTable({
       {/* Desktop Table View (md and above) */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left text-xs">
-          <thead className="border-b border-border/70 bg-muted/20 text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
+          <thead className="border-b border-border/70 text-[10px] font-mono uppercase tracking-[0.16em] text-muted-foreground/80">
             <tr>
               <th scope="col" className="px-5 py-3.5 font-medium">Status</th>
               <th scope="col" className="px-5 py-3.5 font-medium">Intent ID & Ref</th>
@@ -128,10 +128,17 @@ export function PaymentIntentTable({
                     <div className="flex items-center gap-1.5 font-mono">
                       <Link
                         href={`/app/intents/${intent.id}`}
-                        className="font-semibold text-foreground hover:underline truncate max-w-[170px]"
+                        className="relative block max-w-[170px] truncate font-mono font-semibold text-foreground"
                         title={intent.id}
                       >
-                        {intent.id}
+                        {/* Signature motif: the ID is redacted until hover */}
+                        <span
+                          aria-hidden="true"
+                          className="veil-redact absolute inset-0 py-1 text-primary/60 opacity-100 transition-opacity duration-200 group-hover:opacity-0"
+                        />
+                        <span className="opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                          {intent.id}
+                        </span>
                       </Link>
                       <button
                         type="button"
