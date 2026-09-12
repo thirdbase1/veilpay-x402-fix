@@ -3,28 +3,56 @@
 /**
  * Detection and connection for injected Midnight wallet extensions.
  *
- * Injection points follow the official wallet documentation:
- *   - Lace Midnight:   window.midnight.mnLace
- *       isEnabled() -> boolean, enable() -> WalletAPI, state() -> { address, ... }
- *   - 1AM Wallet:      window.midnight['1am']
- *       connect(networkId) -> ConnectedAPI
+ * Implements the official DApp Connector API (v4) as defined by
+ * @midnight-ntwrk/dapp-connector-api:
  *
- * Legacy injections (window.midnight.lace, a default window.midnight.enable,
- * or the Cardano-side window.cardano.laceMidnight) are also recognized so
+ * Wallets inject an InitialAPI under `window.midnight.<uuid>`:
+ *   {
+ *     rdns: string        // reverse-DNS wallet identifier, e.g. "io.lace.midnight"
+ *     name: string        // display name
+ *     icon: string        // wallet icon URL (hosted or data URL)
+ *     apiVersion: string  // e.g. "4.0.1"
+ *     connect(networkId): Promise<ConnectedAPI>   // networkId: 'mainnet' | 'preview' | 'preprod' | 'undeployed'
+ *   }
+ *
+ * ConnectedAPI (the relevant subset):
+ *   getUnshieldedAddress(): Promise<{ unshieldedAddress: string }>
+ *   getShieldedAddresses(): Promise<{ shieldedAddress: string, ... }>
+ *   makeTransfer(outputs: DesiredOutput[]): Promise<{ tx: string }>
+ *   submitTransaction(tx: string): Promise<void>
+ *
+ * Legacy injections (window.midnight.mnLace / .lace with enable()/state(),
+ * or the Cardano-side window.cardano.laceMidnight) are still recognized so
  * older extension builds keep working.
  */
 
-export type WalletProviderId = 'lace' | '1am' | 'midnight-default' | 'lace-midnight'
+export type WalletProviderId = string
 
 export interface DetectedWallet {
   id: WalletProviderId
   name: string
   description: string
+  /** Wallet-provided icon URL (hosted resource or base64 data URL), when exposed. */
+  icon?: string
+  /** True when the wallet implements the v4 InitialAPI (rdns + connect). */
+  isV4?: boolean
 }
 
-interface MidnightProviderApi {
+export interface MidnightProviderApi {
+  // v4 InitialAPI
+  rdns?: string
+  name?: string
+  icon?: string
+  apiVersion?: string
+  connect?: (networkId: string) => Promise<Record<string, unknown>>
+  // v4 ConnectedAPI
+  getUnshieldedAddress?: () => Promise<{ unshieldedAddress: string } | string>
+  getShieldedAddresses?: () => Promise<{ shieldedAddress: string } | string>
+  getUnshieldedBalances?: () => Promise<Record<string, bigint>>
+  makeTransfer?: (outputs: unknown[], options?: unknown) => Promise<{ tx: string }>
+  submitTransaction?: (tx: string) => Promise<void>
+  // Legacy (pre-v4) surface
   enable?: (...args: unknown[]) => Promise<unknown>
-  connect?: (...args: unknown[]) => Promise<unknown>
   isEnabled?: () => Promise<boolean>
   state?: () => Promise<unknown>
   address?: () => Promise<string>
@@ -33,19 +61,21 @@ interface MidnightProviderApi {
 }
 
 interface InjectedWindow {
-  midnight?: Record<string, unknown> & {
-    enable?: () => Promise<MidnightProviderApi>
-    isAvailable?: boolean
-  }
+  midnight?: Record<string, unknown>
   cardano?: {
     laceMidnight?: { enable: () => Promise<MidnightProviderApi> }
   }
 }
 
-const KNOWN_WALLETS: Record<string, { id: WalletProviderId; name: string; description: string }> = {
-  mnLace: { id: 'lace', name: 'Lace', description: 'Lace Midnight wallet' },
-  lace: { id: 'lace', name: 'Lace', description: 'Lace Midnight wallet' },
-  '1am': { id: '1am', name: '1AM Wallet', description: '1AM Midnight wallet' },
+/** Brand icon + display metadata keyed by rdns fragment. */
+const BRAND_BY_RDNS: Array<{ match: string; name: string; icon: string; description: string }> = [
+  { match: 'lace', name: 'Lace', icon: '/wallets/lace.png', description: 'Lace Midnight wallet' },
+  { match: '1am', name: '1AM Wallet', icon: '/wallets/1am.png', description: '1AM Midnight wallet' },
+]
+
+function brandFor(rdnsOrKey: string): { name: string; icon: string; description: string } | undefined {
+  const lower = rdnsOrKey.toLowerCase()
+  return BRAND_BY_RDNS.find((b) => lower.includes(b.match))
 }
 
 function getWindow(): InjectedWindow | null {
@@ -59,45 +89,42 @@ export function detectInjectedWallets(): DetectedWallet[] {
   if (!win) return []
 
   const found: DetectedWallet[] = []
-  const seen = new Set<WalletProviderId>()
+  const seen = new Set<string>()
 
   if (win.midnight) {
-    for (const key of Object.keys(win.midnight)) {
-      const provider = win.midnight[key]
-      if (key === 'isAvailable' || typeof provider !== 'object' || provider === null) continue
-      const api = provider as MidnightProviderApi
-      if (typeof api.enable !== 'function' && typeof api.connect !== 'function') continue
+    for (const [key, value] of Object.entries(win.midnight)) {
+      if (typeof value !== 'object' || value === null) continue
+      const api = value as MidnightProviderApi
 
-      const known = KNOWN_WALLETS[key]
-      const id = known?.id ?? (`ext-${key}` as WalletProviderId)
-      if (seen.has(id)) continue
-      seen.add(id)
-      found.push({
-        id,
-        name: known?.name ?? key,
-        description: known?.description ?? `Midnight wallet "${key}"`,
-      })
-    }
+      const isV4 = typeof api.connect === 'function' && typeof api.rdns === 'string'
+      const isLegacy =
+        typeof api.enable === 'function' ||
+        (typeof api.connect === 'function' && typeof api.rdns !== 'string')
+      if (!isV4 && !isLegacy) continue
 
-    // A default provider directly on window.midnight (older builds).
-    if (
-      typeof win.midnight.enable === 'function' &&
-      !found.some((w) => w.id === 'lace' || w.id === '1am')
-    ) {
-      seen.add('midnight-default')
+      const brand = brandFor(api.rdns ?? key)
+      const name = api.name || brand?.name || key
+      const dedupeKey = api.rdns ?? name
+      if (seen.has(dedupeKey)) continue
+      seen.add(dedupeKey)
+
       found.push({
-        id: 'midnight-default',
-        name: 'Midnight Wallet',
-        description: 'Default injected Midnight provider',
+        id: key,
+        name,
+        description: brand?.description ?? `Midnight wallet${api.apiVersion ? ` (API v${api.apiVersion})` : ''}`,
+        icon: brand?.icon ?? (typeof api.icon === 'string' ? api.icon : undefined),
+        isV4,
       })
     }
   }
 
-  if (win.cardano?.laceMidnight?.enable && !seen.has('lace')) {
+  // Lace Midnight via the Cardano namespace (older builds).
+  if (win.cardano?.laceMidnight?.enable && !found.some((w) => w.name === 'Lace')) {
     found.push({
-      id: 'lace-midnight',
+      id: 'cardano:laceMidnight',
       name: 'Lace',
       description: 'Lace (Cardano Midnight edition)',
+      icon: '/wallets/lace.png',
     })
   }
 
@@ -106,12 +133,33 @@ export function detectInjectedWallets(): DetectedWallet[] {
 
 /** Extract an account address from whatever shape the wallet API exposes. */
 async function resolveAddress(api: MidnightProviderApi): Promise<string | undefined> {
+  // v4: unshielded address, returned as { unshieldedAddress } (or plain string in some builds).
+  if (typeof api.getUnshieldedAddress === 'function') {
+    try {
+      const res = (await api.getUnshieldedAddress()) as { unshieldedAddress: string } | string
+      const addr = typeof res === 'string' ? res : res?.unshieldedAddress
+      if (typeof addr === 'string' && addr) return addr
+    } catch {
+      // Fall through to the other accessors.
+    }
+  }
+  // v4: shielded address as a fallback identity.
+  if (typeof api.getShieldedAddresses === 'function') {
+    try {
+      const res = (await api.getShieldedAddresses()) as { shieldedAddress: string } | string
+      const addr = typeof res === 'string' ? res : res?.shieldedAddress
+      if (typeof addr === 'string' && addr) return addr
+    } catch {
+      // Fall through.
+    }
+  }
+  // Legacy accessors.
   if (typeof api.state === 'function') {
     try {
       const st = (await api.state()) as { address?: string } | null
       if (typeof st?.address === 'string' && st.address) return st.address
     } catch {
-      // Fall through to the other accessors.
+      // Fall through.
     }
   }
   if (typeof api.address === 'function') return await api.address()
@@ -121,6 +169,9 @@ async function resolveAddress(api: MidnightProviderApi): Promise<string | undefi
   }
   return undefined
 }
+
+/** Network ids tried in order — testnet first, matching this app's deployment. */
+const NETWORK_IDS = ['preview', 'preprod', 'undeployed', 'mainnet']
 
 /**
  * Connect a detected wallet provider and return the raw connected API plus
@@ -136,42 +187,54 @@ export async function connectWalletApi(
 
   let api: MidnightProviderApi | undefined
 
-  if (id === 'midnight-default') {
-    api = await win.midnight?.enable?.()
-  } else if (id === 'lace-midnight') {
-    api = await win.cardano?.laceMidnight?.enable()
-  } else if (win.midnight) {
-    // Resolve the provider by wallet id (mnLace for Lace, '1am' for 1AM).
-    const key = Object.keys(win.midnight).find((k) => KNOWN_WALLETS[k]?.id === id)
-    const provider = key ? (win.midnight[key] as MidnightProviderApi | undefined) : undefined
+  if (id.startsWith('cardano:')) {
+    const key = id.slice('cardano:'.length)
+    const provider = win.cardano?.[key as keyof typeof win.cardano] as
+      | { enable: () => Promise<MidnightProviderApi> }
+      | undefined
+    if (!provider?.enable) {
+      throw new Error('The wallet provider is no longer available. Refresh and try again.')
+    }
+    api = await provider.enable()
+  } else {
+    const provider = win.midnight?.[id] as MidnightProviderApi | undefined
     if (!provider) {
       throw new Error('The wallet provider is no longer available. Refresh and try again.')
     }
 
-    if (typeof provider.isEnabled === 'function') {
-      try {
-        if (!(await provider.isEnabled()) && typeof provider.enable === 'function') {
-          api = (await provider.enable()) as MidnightProviderApi
-        } else {
-          api = provider
+    if (typeof provider.connect === 'function') {
+      // v4 connect(networkId) requires an explicit network id. Try the
+      // app's target networks in order; the first that resolves wins.
+      let lastError: unknown
+      for (const networkId of NETWORK_IDS) {
+        try {
+          api = (await provider.connect(networkId)) as MidnightProviderApi
+          break
+        } catch (err) {
+          lastError = err
         }
-      } catch {
-        api = provider
+      }
+      if (!api && lastError) {
+        throw lastError instanceof Error
+          ? lastError
+          : new Error('The wallet rejected the connection request.')
       }
     }
 
+    // Legacy enable() surface.
     if (!api && typeof provider.enable === 'function') {
-      api = (await provider.enable()) as MidnightProviderApi
-    }
-
-    // 1AM exposes connect(networkId) instead of enable().
-    if (!api && typeof provider.connect === 'function') {
-      try {
-        api = (await provider.connect()) as MidnightProviderApi
-      } catch {
-        // Some builds require an explicit network id; 'preview' is the
-        // documented default for development.
-        api = (await provider.connect('preview')) as MidnightProviderApi
+      if (typeof provider.isEnabled === 'function') {
+        try {
+          if (!(await provider.isEnabled())) {
+            api = (await provider.enable()) as MidnightProviderApi
+          } else {
+            api = provider
+          }
+        } catch {
+          api = provider
+        }
+      } else {
+        api = (await provider.enable()) as MidnightProviderApi
       }
     }
 

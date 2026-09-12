@@ -27,12 +27,24 @@ interface WalletConnectFormProps {
   onSuccess?: () => void
 }
 
-/** Official brand marks served from /public/wallets (fetched from lace.io and 1am.xyz). */
-function WalletIcon({ id, className }: { id: WalletProviderId; className?: string }) {
-  if (id === 'lace' || id === 'lace-midnight') {
+/**
+ * Wallet icon: prefer the wallet's own icon from its InitialAPI (may be a
+ * hosted URL or base64 data URL — rendered with a plain img since next/image
+ * cannot handle arbitrary remote/data sources), falling back to the bundled
+ * brand marks for known wallets.
+ */
+function WalletIcon({ wallet, className }: { wallet: DetectedWallet; className?: string }) {
+  const lower = `${wallet.id} ${wallet.name}`.toLowerCase()
+  if (wallet.icon && !wallet.icon.startsWith('/')) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={wallet.icon} alt="" aria-hidden="true" className={`${className} rounded-md object-cover`} />
+    )
+  }
+  if (lower.includes('lace')) {
     return <Image src="/wallets/lace.png" alt="" aria-hidden="true" width={32} height={32} className={`${className} rounded-sm`} />
   }
-  if (id === '1am') {
+  if (lower.includes('1am')) {
     return <Image src="/wallets/1am.png" alt="" aria-hidden="true" width={32} height={32} className={`${className} rounded-full`} />
   }
   return <Puzzle className={className} />
@@ -157,7 +169,7 @@ export function WalletConnectForm({
                 className="w-full flex items-center gap-3 rounded-lg border border-border bg-background/80 py-3 px-4 text-left hover:border-primary/50 hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-muted/40 text-foreground">
-                  <WalletIcon id={wallet.id} className="size-4.5" />
+                  <WalletIcon wallet={wallet} className="size-4.5" />
                 </span>
                 <span className="flex-1 min-w-0">
                   <span className="block text-sm font-semibold text-foreground">{wallet.name}</span>

@@ -23,10 +23,14 @@ const NATIVE_TOKEN_HEX =
 /** All supported assets use 6 base units (micro-tokens). */
 const DECIMALS = 6
 
+/**
+ * DesiredOutput per @midnight-ntwrk/dapp-connector-api v4:
+ * { kind, type (TokenType hex), value (bigint), recipient (Bech32m) }.
+ */
 interface TransferOutput {
   kind: 'unshielded' | 'shielded'
-  tokenType: string
-  value: bigint | number | string
+  type: string
+  value: bigint
   recipient: string
 }
 
@@ -34,7 +38,7 @@ interface WalletConnectedApi {
   makeTransfer?: (outputs: TransferOutput[], options?: { payFees?: boolean }) => Promise<{ tx?: string } | string>
   submitTransaction?: (tx: string) => Promise<void>
   getShieldedAddresses?: () => Promise<{ shieldedAddress?: string }>
-  getUnshieldedAddress?: () => Promise<string>
+  getUnshieldedAddress?: () => Promise<{ unshieldedAddress: string } | string>
 }
 
 /** Convert a human decimal amount ("25.50") into 6-decimal base units. */
@@ -104,7 +108,7 @@ export async function payIntentWithWallet(options: {
 
   // The wallet shows its native approval UI with the exact amount + recipient.
   const result = await connectedApi.makeTransfer([
-    { kind: 'unshielded', tokenType, value, recipient },
+    { kind: 'unshielded', type: tokenType, value, recipient },
   ])
 
   const tx = typeof result === 'string' ? result : result?.tx
