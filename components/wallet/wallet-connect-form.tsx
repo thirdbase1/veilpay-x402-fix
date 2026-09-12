@@ -82,6 +82,12 @@ export function WalletConnectForm({
       try {
         const address = await enableWallet(wallet.id)
 
+        // Remember the wallet so the dashboard's WalletProvider can silently
+        // restore the connection on the next page (the login flow mints the
+        // auth session directly and never passes through context.connect()).
+        // Store the stable rdns — the injection key is a fresh UUID per load.
+        window.localStorage.setItem('veilpay.connectedWalletId', wallet.rdns ?? wallet.id)
+
         const challengeRes = await fetch('/api/auth/wallet/challenge', { method: 'POST' })
         if (!challengeRes.ok) {
           throw new Error('Could not start wallet authentication. Please try again.')
