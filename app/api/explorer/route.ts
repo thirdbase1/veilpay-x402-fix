@@ -10,7 +10,9 @@ export const dynamic = 'force-dynamic'
  * account identifiers ever leave the server.
  */
 
-// Columns that are safe to expose publicly.
+// Columns that are safe to expose publicly. metadata carries the v2 chain
+// registration (chainIntentId, merchantCoinPk, tokenColor) written at create
+// time — only derived, non-identifying projections of it are returned.
 const PUBLIC_COLUMNS = `
   id,
   status,
@@ -21,13 +23,21 @@ const PUBLIC_COLUMNS = `
   network,
   recipient,
   reference,
+  metadata,
   created_at,
   updated_at,
   expires_at,
   merchant_profiles ( business_name )
 `
 
-function maskRecipient(recipient: unknown): string | null {
+/**
+ * v2 recipients are masked coin public keys, not wallet addresses — show the
+ * first 6 hex chars of the registered merchantCoinPk (doc vocabulary).
+ */
+function maskRecipient(recipient: unknown, merchantCoinPk: unknown): string | null {
+  if (typeof merchantCoinPk === 'string' && merchantCoinPk.length >= 6) {
+    return `${merchantCoinPk.replace(/^0x/, '').slice(0, 6)}…`
+  }
   if (typeof recipient !== 'string' || recipient.length === 0) return null
   if (recipient.length <= 14) return recipient
   return `${recipient.slice(0, 10)}…${recipient.slice(-6)}`
@@ -36,6 +46,19 @@ function maskRecipient(recipient: unknown): string | null {
 function maskIntentId(id: string): string {
   if (id.length <= 12) return id
   return `${id.slice(0, 9)}…${id.slice(-4)}`
+}
+
+/**
+ * v2 has no native token — amounts are in whichever shielded zswap token
+ * color the invoice pins, or any when open (zero color).
+ */
+function tokenColorLabel(tokenColor: unknown, legacyAsset: string): string {
+  if (typeof tokenColor === 'string') {
+    const hex = tokenColor.replace(/^0x/, '')
+    if (/^[0-9a-fA-F]*$/.test(hex) && parseInt(hex || '0', 16) === 0) return 'open'
+    return `color ${hex.slice(0, 6)}…`
+  }
+  return legacyAsset
 }
 
 export async function GET() {
@@ -102,6 +125,7 @@ export async function GET() {
     network: string
     recipient: string
     reference: string | null
+    metadata: Record<string, unknown> | null
     created_at: string
     updated_at: string
     expires_at: string | null
@@ -112,15 +136,22 @@ export async function GET() {
     const profile = Array.isArray(row.merchant_profiles)
       ? row.merchant_profiles[0]
       : row.merchant_profiles
+    const meta = (row.metadata ?? {}) as {
+      chainIntentId?: string
+      merchantCoinPk?: string
+      tokenColor?: string
+    }
     return {
-      id: maskIntentId(row.id),
+      // Prefer the on-chain numeric invoice id; fall back to the masked
+      // registry id for legacy rows.
+      id: meta.chainIntentId ? `invoice #${meta.chainIntentId}` : maskIntentId(row.id),
       status: row.status,
       amountKind: row.amount_kind,
-      asset: row.asset,
+      asset: tokenColorLabel(meta.tokenColor, row.asset),
       amount: row.amount,
       amountMax: row.amount_max,
       network: row.network,
-      recipientMasked: maskRecipient(row.recipient),
+      recipientMasked: maskRecipient(row.recipient, meta.merchantCoinPk),
       reference: row.reference,
       merchantName: profile?.business_name ?? 'Unregistered merchant',
       createdAt: row.created_at,

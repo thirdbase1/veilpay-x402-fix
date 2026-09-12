@@ -151,23 +151,20 @@ export default function ExplorerPage() {
             VeilPay Payment Explorer
           </h1>
           <p className="mt-3 text-pretty text-sm leading-relaxed text-muted-foreground">
-            Every payment intent registered on the VeilPay protocol, updating in
-            real time. Payers stay anonymous — only settlement status, amount,
-            and masked recipients are public. No balances, addresses, or
-            payment history are ever exposed.
+            Every invoice registered on the VeilPay v2 contract, updating in
+            real time from the public ledger. Payers stay anonymous — only
+            settlement status, amount, token color, and masked coin keys are
+            public. No balances, addresses, or payment history are ever exposed.
           </p>
         </div>
 
         {/* Stats */}
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { label: 'Intents Tracked', value: data?.stats.total ?? '—' },
-            { label: 'Verified', value: data?.stats.verified ?? '—' },
+            { label: 'Invoices Tracked', value: data?.stats.total ?? '—' },
+            { label: 'Settled', value: data?.stats.verified ?? '—' },
             { label: 'Awaiting Payment', value: data?.stats.awaiting ?? '—' },
-            {
-              label: 'Settled Volume',
-              value: data ? `${data.stats.settledVolume.toLocaleString()}` : '—',
-            },
+            { label: 'Expired', value: data?.stats.expired ?? '—' },
           ].map((stat) => (
             <div
               key={stat.label}
