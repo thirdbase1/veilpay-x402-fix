@@ -1,5 +1,7 @@
 'use client'
 
+import { midnightPublicConfig } from '@/lib/config'
+
 /**
  * Detection and connection for injected Midnight wallet extensions.
  *
@@ -174,7 +176,16 @@ async function resolveAddress(api: MidnightProviderApi): Promise<string | undefi
   return undefined
 }
 
-/** Network ids tried in order — testnet first, matching this app's deployment. */
+/** Network ids tried in order. Per the Lace DApp Connector docs, connect()
+ * must target the specific network the dApp operates on — so the app's
+ * configured network (preprod for this deployment) is always tried first,
+ * with the others as fallbacks for older extension builds. */
+function networkIdsToTry(): string[] {
+  const configured = midnightPublicConfig.network?.trim()
+  const preferred = configured && configured !== 'undeployed' ? configured : 'preprod'
+  return [preferred, ...NETWORK_IDS.filter((n) => n !== preferred)]
+}
+
 const NETWORK_IDS = ['preview', 'preprod', 'undeployed', 'mainnet']
 
 /**
@@ -207,10 +218,10 @@ export async function connectWalletApi(
     }
 
     if (typeof provider.connect === 'function') {
-      // v4 connect(networkId) requires an explicit network id. Try the
-      // app's target networks in order; the first that resolves wins.
+      // v4 connect(networkId) requires an explicit network id. Try the app's
+      // configured network first, then the others; the first that resolves wins.
       let lastError: unknown
-      for (const networkId of NETWORK_IDS) {
+      for (const networkId of networkIdsToTry()) {
         try {
           api = (await provider.connect(networkId)) as MidnightProviderApi
           break
