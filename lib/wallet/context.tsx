@@ -10,6 +10,7 @@ import {
 } from 'react'
 import type { WalletAccount, WalletConnectionStatus } from './types'
 import { midnightPublicConfig } from '@/lib/config'
+import { detectInjectedWallets, connectWalletApi } from './detect'
 
 interface WalletContextValue {
   status: WalletConnectionStatus
@@ -29,23 +30,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const [isExtensionDetected, setIsExtensionDetected] = useState(false)
 
-  // Check if a real Midnight or Lace extension is injected in the browser window
+  // Extensions inject asynchronously after page load — poll with backoff
+  // instead of checking once, so a slow-injecting Lace/1AM is still found.
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    const checkExtension = () => {
-      // Standard window injection for Midnight / Midnight Lace
-      const win = window as unknown as {
-        midnight?: { isAvailable?: boolean }
-        cardano?: { laceMidnight?: unknown }
-      }
-      const detected = Boolean(win.midnight || win.cardano?.laceMidnight)
-      setIsExtensionDetected(detected)
-    }
+    const checkExtension = () => setIsExtensionDetected(detectInjectedWallets().length > 0)
 
     checkExtension()
-    const timer = setTimeout(checkExtension, 1000)
-    return () => clearTimeout(timer)
+    const delays = [500, 1500, 3000, 5000]
+    const timers = delays.map((d) => setTimeout(checkExtension, d))
+    return () => timers.forEach(clearTimeout)
   }, [])
 
   const connect = useCallback(async () => {
@@ -59,45 +54,37 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      const win = window as unknown as {
-        midnight?: {
-          enable?: () => Promise<{ getAddress: () => Promise<string> }>
-        }
-        cardano?: {
-          laceMidnight?: {
-            enable: () => Promise<{ getUsedAddresses?: () => Promise<string[]> }>
-          }
-        }
-      }
-
-      // If a real extension is available, attempt real handshake
-      if (win.midnight?.enable) {
-        const api = await win.midnight.enable()
-        const address = await api.getAddress()
-        setAccount({
-          address,
-          network: midnightPublicConfig.network || 'testnet',
-        })
-        setStatus('connected')
+      const wallets = detectInjectedWallets()
+      if (wallets.length === 0) {
+        setStatus('disconnected')
+        setError(
+          'No Midnight-compatible wallet extension (such as Lace Midnight edition) was detected in this browser.',
+        )
         return
       }
 
-      if (win.cardano?.laceMidnight?.enable) {
-        const api = await win.cardano.laceMidnight.enable()
-        const addrs = (await api.getUsedAddresses?.()) || []
-        const address = addrs[0] || 'mn_connected_account'
-        setAccount({
-          address,
-          network: midnightPublicConfig.network || 'testnet',
-        })
-        setStatus('connected')
-        return
+      // Connect to the first detected wallet; if it fails (e.g. user
+      // rejected in that extension), try the next one before giving up.
+      let lastError: unknown
+      for (const wallet of wallets) {
+        try {
+          const { address } = await connectWalletApi(wallet.id)
+          setAccount({
+            address,
+            network: midnightPublicConfig.network || 'testnet',
+          })
+          setStatus('connected')
+          return
+        } catch (err) {
+          lastError = err
+        }
       }
 
-      // Truthful: No fake connected state!
       setStatus('disconnected')
       setError(
-        'No Midnight-compatible wallet extension (such as Lace Midnight edition) was detected in this browser.',
+        lastError instanceof Error
+          ? lastError.message
+          : 'Wallet rejected connection request.',
       )
     } catch (err: unknown) {
       setStatus('disconnected')
