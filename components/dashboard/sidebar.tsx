@@ -9,7 +9,6 @@ import {
   ReceiptText,
   Activity as ActivityIcon,
   PlusCircle,
-  ShieldCheck,
 } from 'lucide-react'
 import { useWallet } from '@/lib/wallet/context'
 import { midnightPublicConfig } from '@/lib/config'
@@ -78,22 +77,6 @@ export function DashboardSidebar({ onNavigate }: SidebarProps) {
             )
           })}
         </nav>
-
-        {/* Privacy Note */}
-        <div className="relative mt-6 overflow-hidden rounded-lg border border-border/50 bg-background/40 p-3">
-          <span
-            aria-hidden="true"
-            className="veil-redact absolute inset-x-3.5 top-0 h-0.5 text-primary/40"
-          />
-          <div className="flex items-center gap-2 text-primary">
-            <ShieldCheck className="size-4" />
-            <p className="font-mono text-[11px] font-medium text-foreground">Zero-Knowledge</p>
-          </div>
-          <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
-            Payments are verified against your conditions without revealing the customer&apos;s
-            balance or history.
-          </p>
-        </div>
       </div>
 
       {/* Bottom Network Status */}
