@@ -67,15 +67,15 @@ export function VerificationStatusFlow({ status }: VerificationStatusFlowProps) 
       )}
 
       {status === 'expired' && (
-        <div className="rounded-xl border border-zinc-700/60 bg-zinc-900/40 p-3.5 flex items-center gap-3 text-xs text-zinc-300">
-          <AlertTriangle className="size-4 shrink-0 text-zinc-400" />
+        <div className="rounded-xl border border-border/60 bg-muted/40 p-3.5 flex items-center gap-3 text-xs text-muted-foreground">
+          <AlertTriangle className="size-4 shrink-0 text-muted-foreground" />
           <p>This payment intent expired before satisfaction. Late customer payments will be rejected.</p>
         </div>
       )}
 
       {status === 'failed' && (
-        <div className="rounded-xl border border-rose-500/30 bg-rose-950/20 p-3.5 flex items-center gap-3 text-xs text-rose-300">
-          <XCircle className="size-4 shrink-0 text-rose-400" />
+        <div className="rounded-xl border border-destructive/30 bg-destructive/20 p-3.5 flex items-center gap-3 text-xs text-destructive">
+          <XCircle className="size-4 shrink-0 text-destructive" />
           <p>Cryptographic proof verification failed to satisfy the required merchant conditions.</p>
         </div>
       )}
@@ -90,9 +90,9 @@ export function VerificationStatusFlow({ status }: VerificationStatusFlowProps) 
               key={step.id}
               className={`rounded-xl border p-4 transition ${
                 state === 'completed'
-                  ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
+                  ? 'border-accent/30 bg-accent/20 text-accent'
                   : state === 'current'
-                  ? 'border-cyan-500/40 bg-cyan-950/20 text-cyan-200'
+                  ? 'border-primary/40 bg-primary/20 text-primary'
                   : 'border-border/60 bg-background/40 text-muted-foreground'
               }`}
             >
@@ -101,9 +101,9 @@ export function VerificationStatusFlow({ status }: VerificationStatusFlowProps) 
                   {step.id === 'awaiting_payment' ? 'Phase 1' : step.id === 'verifying' ? 'Phase 2' : 'Phase 3'}
                 </span>
                 {state === 'completed' ? (
-                  <CheckCircle2 className="size-4 text-emerald-400" />
+                  <CheckCircle2 className="size-4 text-accent" />
                 ) : state === 'current' ? (
-                  <RefreshCw className="size-4 animate-spin text-cyan-400" />
+                  <RefreshCw className="size-4 animate-spin text-primary" />
                 ) : (
                   <Clock className="size-4 text-muted-foreground/50" />
                 )}

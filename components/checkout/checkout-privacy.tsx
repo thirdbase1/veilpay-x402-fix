@@ -45,7 +45,7 @@ export function CheckoutPrivacy() {
 
         {/* Step 3: Merchant */}
         <div className="rounded-xl border border-border/60 bg-background/50 p-3.5 space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-400">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-accent">
             <CheckCircle2 className="size-3" aria-hidden="true" />
             <span>What merchant gets</span>
           </div>

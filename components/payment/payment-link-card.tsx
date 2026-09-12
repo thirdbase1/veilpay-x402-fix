@@ -110,8 +110,8 @@ export function PaymentLinkCard({
       </div>
 
       {isInactive && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-3 flex items-center gap-2 text-xs text-amber-300">
-          <AlertCircle className="size-4 shrink-0 text-amber-400" />
+        <div className="rounded-xl border border-warning/30 bg-warning/20 p-3 flex items-center gap-2 text-xs text-warning">
+          <AlertCircle className="size-4 shrink-0 text-warning" />
           <span>
             This payment intent is inactive ({statusDisplay[status] || status}). Checkout will reject submissions.
           </span>
@@ -134,8 +134,8 @@ export function PaymentLinkCard({
           >
             {copied ? (
               <>
-                <Check className="size-3.5 text-emerald-400" />
-                <span className="text-emerald-400">Copied</span>
+                <Check className="size-3.5 text-accent" />
+                <span className="text-accent">Copied</span>
               </>
             ) : (
               <>

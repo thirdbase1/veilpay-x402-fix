@@ -43,7 +43,7 @@ export function WalletButton() {
           aria-expanded={showMenu}
           aria-haspopup="true"
         >
-          <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+          <span className="size-2 rounded-full bg-accent shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
           <span className="font-medium text-foreground">{truncated}</span>
         </button>
 
@@ -64,7 +64,7 @@ export function WalletButton() {
                 onClick={handleCopy}
                 className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-foreground transition hover:bg-muted/40"
               >
-                {copied ? <Check className="size-3.5 text-emerald-400" /> : <Copy className="size-3.5" />}
+                {copied ? <Check className="size-3.5 text-accent" /> : <Copy className="size-3.5" />}
                 {copied ? 'Address copied' : 'Copy full address'}
               </button>
 
@@ -74,7 +74,7 @@ export function WalletButton() {
                   disconnect()
                   setShowMenu(false)
                 }}
-                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-rose-400 transition hover:bg-rose-950/20"
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-destructive transition hover:bg-destructive/20"
               >
                 <LogOut className="size-3.5" />
                 Disconnect Wallet
@@ -101,10 +101,10 @@ export function WalletButton() {
       {error && (
         <div
           role="alert"
-          className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-amber-500/30 bg-card/95 p-3 text-xs shadow-2xl backdrop-blur-md"
+          className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-warning/30 bg-card/95 p-3 text-xs shadow-2xl backdrop-blur-md"
         >
           <div className="flex items-start gap-2">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-400" />
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
             <div className="flex-1">
               <p className="font-medium text-foreground">Wallet Unavailable</p>
               <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{error}</p>

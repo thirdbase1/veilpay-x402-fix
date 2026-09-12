@@ -19,16 +19,16 @@ export function IntentNotFound({ id, error }: IntentNotFoundProps) {
 
       <div
         role="alert"
-        className="rounded-2xl border border-rose-500/30 bg-rose-950/20 p-6 text-rose-300 space-y-4"
+        className="rounded-2xl border border-destructive/30 bg-destructive/20 p-6 text-destructive space-y-4"
       >
-        <div className="flex items-center gap-2.5 text-base font-semibold text-rose-300">
-          <AlertTriangle className="size-5 text-rose-400" />
+        <div className="flex items-center gap-2.5 text-base font-semibold text-destructive">
+          <AlertTriangle className="size-5 text-destructive" />
           <span>Payment Intent Not Found</span>
         </div>
-        <p className="text-xs text-rose-300/90 leading-relaxed">
+        <p className="text-xs text-destructive/90 leading-relaxed">
           {error || "We couldn't find a payment intent with this identifier."}
         </p>
-        <p className="font-mono text-xs text-rose-400/70 break-all select-all">
+        <p className="font-mono text-xs text-destructive/70 break-all select-all">
           Requested ID: {id}
         </p>
         <div className="pt-2">

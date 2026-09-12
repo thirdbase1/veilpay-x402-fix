@@ -104,8 +104,8 @@ export function PaymentIntentHeader({
             >
               {copiedId ? (
                 <>
-                  <Check className="size-3 text-emerald-400" />
-                  <span className="text-emerald-400 font-mono text-[11px]">Copied</span>
+                  <Check className="size-3 text-accent" />
+                  <span className="text-accent font-mono text-[11px]">Copied</span>
                 </>
               ) : (
                 <>
@@ -136,7 +136,7 @@ export function PaymentIntentHeader({
             <button
               type="button"
               onClick={() => setConfirmCancel(true)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-950/10 px-2.5 text-xs font-medium text-rose-400 hover:bg-rose-950/30 transition-colors"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 text-xs font-medium text-destructive hover:bg-destructive/30 transition-colors"
             >
               <Ban className="size-3.5" />
               <span>Cancel Intent</span>
@@ -144,8 +144,8 @@ export function PaymentIntentHeader({
           )}
 
           {canCancel && confirmCancel && (
-            <div className="flex items-center gap-1.5 rounded-lg border border-rose-500/40 bg-rose-950/30 p-1">
-              <span className="px-1 text-[11px] text-rose-300 font-medium">Confirm?</span>
+            <div className="flex items-center gap-1.5 rounded-lg border border-destructive/40 bg-destructive/30 p-1">
+              <span className="px-1 text-[11px] text-destructive font-medium">Confirm?</span>
               <button
                 type="button"
                 onClick={async () => {
@@ -153,7 +153,7 @@ export function PaymentIntentHeader({
                   setConfirmCancel(false)
                 }}
                 disabled={isCancelling}
-                className="inline-flex h-6 items-center gap-1 rounded bg-rose-600 px-2 text-[11px] font-semibold text-white hover:bg-rose-500 transition-colors disabled:opacity-50"
+                className="inline-flex h-6 items-center gap-1 rounded bg-destructive px-2 text-[11px] font-semibold text-white hover:bg-destructive transition-colors disabled:opacity-50"
               >
                 {isCancelling ? (
                   <Loader2 className="size-3 animate-spin" />

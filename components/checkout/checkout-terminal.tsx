@@ -14,8 +14,8 @@ import {
 export function CheckoutNotFound({ intentId }: { intentId: string }) {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center text-center p-4">
-      <div className="w-full max-w-md rounded-2xl border border-rose-500/30 bg-card/60 p-6 sm:p-8 space-y-4 shadow-xl">
-        <div className="flex size-12 items-center justify-center rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 mx-auto">
+      <div className="w-full max-w-md rounded-2xl border border-destructive/30 bg-card/60 p-6 sm:p-8 space-y-4 shadow-xl">
+        <div className="flex size-12 items-center justify-center rounded-xl bg-destructive/10 border border-destructive/20 text-destructive mx-auto">
           <AlertTriangle className="size-6" aria-hidden="true" />
         </div>
 
@@ -52,8 +52,8 @@ export function CheckoutNotFound({ intentId }: { intentId: string }) {
 
 export function CheckoutExpired({ intent }: { intent: PaymentIntent }) {
   return (
-    <div className="rounded-2xl border border-zinc-700/60 bg-zinc-900/40 p-6 sm:p-8 text-center space-y-4 shadow-xl">
-      <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-400 mx-auto">
+    <div className="rounded-2xl border border-border/60 bg-muted/40 p-6 sm:p-8 text-center space-y-4 shadow-xl">
+      <div className="flex size-12 items-center justify-center rounded-xl bg-muted border border-border text-muted-foreground mx-auto">
         <Clock className="size-6" aria-hidden="true" />
       </div>
 
@@ -116,13 +116,13 @@ export function CheckoutCancelled({ intent }: { intent: PaymentIntent }) {
 
 export function CheckoutVerifiedReceipt({ intent }: { intent: PaymentIntent }) {
   return (
-    <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-6 sm:p-8 text-center space-y-5 shadow-xl">
-      <div className="flex size-12 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mx-auto">
+    <div className="rounded-2xl border border-accent/30 bg-accent/20 p-6 sm:p-8 text-center space-y-5 shadow-xl">
+      <div className="flex size-12 items-center justify-center rounded-xl bg-accent/10 border border-accent/20 text-accent mx-auto">
         <CheckCircle2 className="size-7" aria-hidden="true" />
       </div>
 
       <div className="space-y-1">
-        <span className="inline-flex items-center gap-1 font-mono text-[11px] text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 rounded-full px-2.5 py-0.5">
+        <span className="inline-flex items-center gap-1 font-mono text-[11px] text-accent bg-accent/40 border border-accent/30 rounded-full px-2.5 py-0.5">
           <ShieldCheck className="size-3" aria-hidden="true" />
           Zero-Knowledge Verified
         </span>

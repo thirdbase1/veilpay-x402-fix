@@ -113,13 +113,13 @@ export function PaymentIntentForm() {
       {submitError && (
         <div
           role="alert"
-          className="rounded-xl border border-rose-500/30 bg-rose-950/20 p-4 text-xs text-rose-300"
+          className="rounded-xl border border-destructive/30 bg-destructive/20 p-4 text-xs text-destructive"
         >
           <div className="flex items-start gap-2">
-            <AlertTriangle className="size-4 shrink-0 text-rose-400 mt-0.5" />
+            <AlertTriangle className="size-4 shrink-0 text-destructive mt-0.5" />
             <div>
               <p className="font-semibold">Creation Error</p>
-              <p className="mt-1 text-rose-400/90">{submitError}</p>
+              <p className="mt-1 text-destructive/90">{submitError}</p>
             </div>
           </div>
         </div>
@@ -169,11 +169,11 @@ export function PaymentIntentForm() {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className={`w-full rounded-lg border bg-background px-3 py-2 text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                getFieldError('amount') ? 'border-rose-500/80 ring-1 ring-rose-500/50' : 'border-border'
+                getFieldError('amount') ? 'border-destructive/80 ring-1 ring-destructive/50' : 'border-border'
               }`}
             />
             {getFieldError('amount') && (
-              <p className="mt-1 text-[11px] text-rose-400">{getFieldError('amount')}</p>
+              <p className="mt-1 text-[11px] text-destructive">{getFieldError('amount')}</p>
             )}
           </div>
 
@@ -211,11 +211,11 @@ export function PaymentIntentForm() {
               value={amountMax}
               onChange={(e) => setAmountMax(e.target.value)}
               className={`w-full rounded-lg border bg-background px-3 py-2 text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                getFieldError('amountMax') ? 'border-rose-500/80 ring-1 ring-rose-500/50' : 'border-border'
+                getFieldError('amountMax') ? 'border-destructive/80 ring-1 ring-destructive/50' : 'border-border'
               }`}
             />
             {getFieldError('amountMax') && (
-              <p className="mt-1 text-[11px] text-rose-400">{getFieldError('amountMax')}</p>
+              <p className="mt-1 text-[11px] text-destructive">{getFieldError('amountMax')}</p>
             )}
           </div>
         )}
@@ -256,11 +256,11 @@ export function PaymentIntentForm() {
             value={recipient}
             onChange={(e) => setRecipient(e.target.value)}
             className={`w-full rounded-lg border bg-background px-3 py-2 text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-              getFieldError('recipient') ? 'border-rose-500/80 ring-1 ring-rose-500/50' : 'border-border'
+              getFieldError('recipient') ? 'border-destructive/80 ring-1 ring-destructive/50' : 'border-border'
             }`}
           />
           {getFieldError('recipient') ? (
-            <p className="mt-1 text-[11px] text-rose-400">{getFieldError('recipient')}</p>
+            <p className="mt-1 text-[11px] text-destructive">{getFieldError('recipient')}</p>
           ) : (
             <p className="mt-1 text-[11px] text-muted-foreground">
               Must be your valid Midnight account identity. Payer will satisfy payment to this address.
@@ -319,13 +319,13 @@ export function PaymentIntentForm() {
                 value={expiresAt}
                 onChange={(e) => setExpiresAt(e.target.value)}
                 className={`w-full rounded-lg border bg-background px-3 py-2 text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                  getFieldError('expiresAt') ? 'border-rose-500/80 ring-1 ring-rose-500/50' : 'border-border'
+                  getFieldError('expiresAt') ? 'border-destructive/80 ring-1 ring-destructive/50' : 'border-border'
                 }`}
               />
               <Calendar className="absolute right-3 top-2.5 size-4 text-muted-foreground pointer-events-none" />
             </div>
             {getFieldError('expiresAt') ? (
-              <p className="mt-1 text-[11px] text-rose-400">{getFieldError('expiresAt')}</p>
+              <p className="mt-1 text-[11px] text-destructive">{getFieldError('expiresAt')}</p>
             ) : (
               <p className="mt-1 text-[11px] text-muted-foreground">
                 After expiration, the intent will reject late proofs and transition to expired.
@@ -369,7 +369,7 @@ export function PaymentIntentForm() {
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <HelpCircle className="size-3.5" />
-          <span>Intent will be registered with status <strong className="text-cyan-300 font-mono">awaiting_payment</strong></span>
+          <span>Intent will be registered with status <strong className="text-primary font-mono">awaiting_payment</strong></span>
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">

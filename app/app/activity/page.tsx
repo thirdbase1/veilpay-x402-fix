@@ -83,14 +83,14 @@ function getEventBadge(type: ActivityEventType) {
     case 'PAYMENT_VERIFIED':
       return {
         label: 'Verified',
-        icon: <CheckCircle2 className="size-3.5 text-emerald-400" />,
-        badgeClass: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
+        icon: <CheckCircle2 className="size-3.5 text-accent" />,
+        badgeClass: 'border-accent/30 bg-accent/10 text-accent',
       }
     case 'PAYMENT_INTENT_CANCELLED':
       return {
         label: 'Cancelled',
-        icon: <XCircle className="size-3.5 text-amber-400" />,
-        badgeClass: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
+        icon: <XCircle className="size-3.5 text-warning" />,
+        badgeClass: 'border-warning/30 bg-warning/10 text-warning',
       }
     case 'PAYMENT_INTENT_EXPIRED':
       return {
@@ -101,14 +101,14 @@ function getEventBadge(type: ActivityEventType) {
     case 'VERIFICATION_STARTED':
       return {
         label: 'Verifying',
-        icon: <ShieldCheck className="size-3.5 text-sky-400" />,
-        badgeClass: 'border-sky-500/30 bg-sky-500/10 text-sky-400',
+        icon: <ShieldCheck className="size-3.5 text-primary" />,
+        badgeClass: 'border-primary/30 bg-primary/10 text-primary',
       }
     case 'PAYMENT_DETECTED':
       return {
         label: 'Detected',
-        icon: <Activity className="size-3.5 text-indigo-400" />,
-        badgeClass: 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400',
+        icon: <Activity className="size-3.5 text-primary" />,
+        badgeClass: 'border-primary/30 bg-primary/10 text-primary',
       }
     case 'PAYMENT_FAILED':
       return {

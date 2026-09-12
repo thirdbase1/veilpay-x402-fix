@@ -108,8 +108,8 @@ export function PaymentRequirements({ intent }: PaymentRequirementsProps) {
             >
               {copiedRecipient ? (
                 <>
-                  <Check className="size-3 text-emerald-400" />
-                  <span className="text-emerald-400 font-mono">Copied</span>
+                  <Check className="size-3 text-accent" />
+                  <span className="text-accent font-mono">Copied</span>
                 </>
               ) : (
                 <>
@@ -164,7 +164,7 @@ export function PaymentRequirements({ intent }: PaymentRequirementsProps) {
                 {formattedExpiry}
               </p>
               {isExpired && (
-                <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-400 border border-amber-500/30">
+                <span className="inline-flex items-center gap-1 rounded bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold text-warning border border-warning/30">
                   <AlertTriangle className="size-2.5" />
                   Expired
                 </span>

@@ -90,23 +90,23 @@ export function VerificationCard({ intent }: VerificationCardProps) {
 
       {/* Verified Banner */}
       {status === 'verified' && (
-        <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/20 p-4 space-y-2 text-emerald-300">
+        <div className="rounded-xl border border-accent/40 bg-accent/20 p-4 space-y-2 text-accent">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="size-4 text-emerald-400" />
+            <CheckCircle2 className="size-4 text-accent" />
             <span className="text-xs font-semibold">Payment Verified</span>
           </div>
-          <p className="text-xs text-emerald-200/90 leading-relaxed">
+          <p className="text-xs text-accent/90 leading-relaxed">
             The payment satisfied the requirements defined by this intent. The merchant receives verified proof without exposing the customer&apos;s broader financial history.
           </p>
           {onChainReference && (
-            <div className="pt-1 flex items-center justify-between text-[11px] font-mono border-t border-emerald-500/20">
-              <span className="text-emerald-400">Proof Reference:</span>
+            <div className="pt-1 flex items-center justify-between text-[11px] font-mono border-t border-accent/20">
+              <span className="text-accent">Proof Reference:</span>
               <div className="flex items-center gap-1.5">
-                <code className="text-emerald-200 truncate max-w-[200px]">{onChainReference}</code>
+                <code className="text-accent truncate max-w-[200px]">{onChainReference}</code>
                 <button
                   type="button"
                   onClick={() => handleCopyProof(onChainReference)}
-                  className="hover:text-emerald-100"
+                  className="hover:text-accent"
                   aria-label="Copy proof reference"
                 >
                   {copiedProof ? <Check className="size-3" /> : <Copy className="size-3" />}
@@ -115,7 +115,7 @@ export function VerificationCard({ intent }: VerificationCardProps) {
             </div>
           )}
           {updatedAt && (
-            <p className="text-[10px] text-emerald-400/80 font-mono">
+            <p className="text-[10px] text-accent/80 font-mono">
               Verified at: {new Date(updatedAt).toLocaleString()}
             </p>
           )}
@@ -124,12 +124,12 @@ export function VerificationCard({ intent }: VerificationCardProps) {
 
       {/* Verifying Banner */}
       {status === 'verifying' && (
-        <div className="rounded-xl border border-cyan-500/40 bg-cyan-950/20 p-4 space-y-2 text-cyan-200">
+        <div className="rounded-xl border border-primary/40 bg-primary/20 p-4 space-y-2 text-primary">
           <div className="flex items-center gap-2">
-            <RefreshCw className="size-4 animate-spin motion-reduce:animate-none text-cyan-400" />
+            <RefreshCw className="size-4 animate-spin motion-reduce:animate-none text-primary" />
             <span className="text-xs font-semibold">Verifying Payment</span>
           </div>
-          <p className="text-xs text-cyan-200/90 leading-relaxed">
+          <p className="text-xs text-primary/90 leading-relaxed">
             Payment transaction detected on Midnight. Zero-knowledge contract rules are currently verifying that amount and recipient conditions are satisfied.
           </p>
         </div>
@@ -150,18 +150,18 @@ export function VerificationCard({ intent }: VerificationCardProps) {
 
       {/* Expired Banner with CTA */}
       {status === 'expired' && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 space-y-3 text-amber-300">
+        <div className="rounded-xl border border-warning/30 bg-warning/20 p-4 space-y-3 text-warning">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="size-4 text-amber-400" />
+            <AlertTriangle className="size-4 text-warning" />
             <span className="text-xs font-semibold">Payment Intent Expired</span>
           </div>
-          <p className="text-xs text-amber-200/90 leading-relaxed">
+          <p className="text-xs text-warning/90 leading-relaxed">
             This intent is no longer accepting payments. The configured deadline has elapsed and protocol nodes will reject subsequent settlement proofs.
           </p>
           <div className="pt-1">
             <Link
               href="/app/create"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-200 hover:bg-amber-500/20 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-warning/40 bg-warning/10 px-3 py-1.5 text-xs font-medium text-warning hover:bg-warning/20 transition-colors"
             >
               <PlusCircle className="size-3.5" />
               Create New Payment Intent
@@ -174,7 +174,7 @@ export function VerificationCard({ intent }: VerificationCardProps) {
       {status === 'cancelled' && (
         <div className="rounded-xl border border-border/80 bg-muted/30 p-4 space-y-2 text-muted-foreground">
           <div className="flex items-center gap-2 text-foreground">
-            <Ban className="size-4 text-rose-400" />
+            <Ban className="size-4 text-destructive" />
             <span className="text-xs font-semibold">Payment Intent Cancelled</span>
           </div>
           <p className="text-xs leading-relaxed">
@@ -185,12 +185,12 @@ export function VerificationCard({ intent }: VerificationCardProps) {
 
       {/* Failed Banner */}
       {status === 'failed' && (
-        <div className="rounded-xl border border-rose-500/30 bg-rose-950/20 p-4 space-y-2 text-rose-300">
+        <div className="rounded-xl border border-destructive/30 bg-destructive/20 p-4 space-y-2 text-destructive">
           <div className="flex items-center gap-2">
-            <XCircle className="size-4 text-rose-400" />
+            <XCircle className="size-4 text-destructive" />
             <span className="text-xs font-semibold">Verification Failed</span>
           </div>
-          <p className="text-xs text-rose-200/90 leading-relaxed">
+          <p className="text-xs text-destructive/90 leading-relaxed">
             The cryptographic proof failed to satisfy the configured payment conditions, or verification could not be completed on the network.
           </p>
         </div>
@@ -206,9 +206,9 @@ export function VerificationCard({ intent }: VerificationCardProps) {
               key={step.id}
               className={`rounded-xl border p-4 transition-colors ${
                 state === 'completed'
-                  ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
+                  ? 'border-accent/30 bg-accent/20 text-accent'
                   : state === 'current'
-                  ? 'border-cyan-500/40 bg-cyan-950/20 text-cyan-200'
+                  ? 'border-primary/40 bg-primary/20 text-primary'
                   : 'border-border/60 bg-background/40 text-muted-foreground'
               }`}
             >
@@ -217,9 +217,9 @@ export function VerificationCard({ intent }: VerificationCardProps) {
                   {step.id === 'awaiting_payment' ? 'Phase 1' : step.id === 'verifying' ? 'Phase 2' : 'Phase 3'}
                 </span>
                 {state === 'completed' ? (
-                  <CheckCircle2 className="size-4 text-emerald-400" />
+                  <CheckCircle2 className="size-4 text-accent" />
                 ) : state === 'current' ? (
-                  <RefreshCw className="size-4 animate-spin motion-reduce:animate-none text-cyan-400" />
+                  <RefreshCw className="size-4 animate-spin motion-reduce:animate-none text-primary" />
                 ) : (
                   <Clock className="size-4 text-muted-foreground/50" />
                 )}

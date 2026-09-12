@@ -123,7 +123,7 @@ export function OneAmWalletButton({ className }: OneAmWalletButtonProps) {
                 role="menuitem"
                 onClick={handleSignOut}
                 disabled={signingOut}
-                className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-300 transition-colors hover:bg-secondary disabled:opacity-50"
+                className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-destructive transition-colors hover:bg-secondary disabled:opacity-50"
               >
                 {signingOut ? (
                   <Loader2 className="size-4 animate-spin" />

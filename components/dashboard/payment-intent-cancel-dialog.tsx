@@ -47,13 +47,13 @@ export function PaymentIntentCancelDialog({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in-0 duration-200"
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-rose-500/30 bg-card p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200 text-left"
+        className="w-full max-w-md rounded-2xl border border-destructive/30 bg-card p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200 text-left"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl border border-rose-500/30 bg-rose-950/30 text-rose-400">
+            <div className="flex size-10 items-center justify-center rounded-xl border border-destructive/30 bg-destructive/30 text-destructive">
               <Ban className="size-5" />
             </div>
             <div>
@@ -77,11 +77,11 @@ export function PaymentIntentCancelDialog({
         </div>
 
         {/* Warning Banner */}
-        <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-3 text-xs text-amber-300 flex items-start gap-2.5">
-          <AlertTriangle className="size-4 shrink-0 text-amber-400 mt-0.5" />
+        <div className="rounded-xl border border-warning/30 bg-warning/20 p-3 text-xs text-warning flex items-start gap-2.5">
+          <AlertTriangle className="size-4 shrink-0 text-warning mt-0.5" />
           <div className="space-y-1">
-            <p className="font-medium text-amber-200">Irreversible Action</p>
-            <p className="text-amber-300/90 leading-relaxed text-[11px]">
+            <p className="font-medium text-warning">Irreversible Action</p>
+            <p className="text-warning/90 leading-relaxed text-[11px]">
               Cancelling will immediately invalidate this payment intent. Any customer attempting to pay via the checkout link will see a cancelled status and cannot proceed.
             </p>
           </div>
@@ -103,7 +103,7 @@ export function PaymentIntentCancelDialog({
           )}
           <div className="flex items-center justify-between text-muted-foreground">
             <span>Current Status:</span>
-            <span className="font-mono capitalize text-cyan-400">
+            <span className="font-mono capitalize text-primary">
               {intent.status.replace('_', ' ')}
             </span>
           </div>
@@ -113,7 +113,7 @@ export function PaymentIntentCancelDialog({
         {error && (
           <div
             role="alert"
-            className="rounded-xl border border-rose-500/40 bg-rose-950/30 p-3 text-xs text-rose-300"
+            className="rounded-xl border border-destructive/40 bg-destructive/30 p-3 text-xs text-destructive"
           >
             {error}
           </div>
@@ -133,7 +133,7 @@ export function PaymentIntentCancelDialog({
             type="button"
             onClick={handleConfirm}
             disabled={isSubmitting}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-rose-500 transition shadow-sm disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-destructive px-3.5 py-2 text-xs font-semibold text-white hover:bg-destructive transition shadow-sm disabled:opacity-50"
           >
             {isSubmitting ? (
               <>

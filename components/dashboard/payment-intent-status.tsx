@@ -29,9 +29,9 @@ export function PaymentIntentStatusBadge({ status, className = '' }: StatusBadge
     case 'awaiting_payment':
       return (
         <span
-          className={`inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/30 px-2.5 py-0.5 font-mono text-[11px] font-medium text-cyan-300 ${className}`}
+          className={`inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/30 px-2.5 py-0.5 font-mono text-[11px] font-medium text-primary ${className}`}
         >
-          <Clock className="size-3 text-cyan-400" />
+          <Clock className="size-3 text-primary" />
           Awaiting Payment
         </span>
       )
@@ -39,9 +39,9 @@ export function PaymentIntentStatusBadge({ status, className = '' }: StatusBadge
     case 'verifying':
       return (
         <span
-          className={`inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-950/30 px-2.5 py-0.5 font-mono text-[11px] font-medium text-amber-300 ${className}`}
+          className={`inline-flex items-center gap-1.5 rounded-full border border-warning/30 bg-warning/30 px-2.5 py-0.5 font-mono text-[11px] font-medium text-warning ${className}`}
         >
-          <RefreshCw className="size-3 animate-spin text-amber-400" />
+          <RefreshCw className="size-3 animate-spin text-warning" />
           Verifying
         </span>
       )
@@ -49,9 +49,9 @@ export function PaymentIntentStatusBadge({ status, className = '' }: StatusBadge
     case 'verified':
       return (
         <span
-          className={`inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-950/30 px-2.5 py-0.5 font-mono text-[11px] font-medium text-emerald-300 ${className}`}
+          className={`inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/30 px-2.5 py-0.5 font-mono text-[11px] font-medium text-accent ${className}`}
         >
-          <CheckCircle2 className="size-3 text-emerald-400" />
+          <CheckCircle2 className="size-3 text-accent" />
           Verified
         </span>
       )
@@ -59,9 +59,9 @@ export function PaymentIntentStatusBadge({ status, className = '' }: StatusBadge
     case 'expired':
       return (
         <span
-          className={`inline-flex items-center gap-1.5 rounded-full border border-zinc-700/60 bg-zinc-900/60 px-2.5 py-0.5 font-mono text-[11px] font-medium text-zinc-400 ${className}`}
+          className={`inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/60 px-2.5 py-0.5 font-mono text-[11px] font-medium text-muted-foreground ${className}`}
         >
-          <AlertTriangle className="size-3 text-zinc-400" />
+          <AlertTriangle className="size-3 text-muted-foreground" />
           Expired
         </span>
       )
@@ -69,9 +69,9 @@ export function PaymentIntentStatusBadge({ status, className = '' }: StatusBadge
     case 'failed':
       return (
         <span
-          className={`inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-950/30 px-2.5 py-0.5 font-mono text-[11px] font-medium text-rose-300 ${className}`}
+          className={`inline-flex items-center gap-1.5 rounded-full border border-destructive/30 bg-destructive/30 px-2.5 py-0.5 font-mono text-[11px] font-medium text-destructive ${className}`}
         >
-          <XCircle className="size-3 text-rose-400" />
+          <XCircle className="size-3 text-destructive" />
           Failed
         </span>
       )
@@ -89,9 +89,9 @@ export function PaymentIntentStatusBadge({ status, className = '' }: StatusBadge
     case 'refunded':
       return (
         <span
-          className={`inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-950/30 px-2.5 py-0.5 font-mono text-[11px] font-medium text-violet-300 ${className}`}
+          className={`inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/30 px-2.5 py-0.5 font-mono text-[11px] font-medium text-primary ${className}`}
         >
-          <RefreshCw className="size-3 text-violet-400" />
+          <RefreshCw className="size-3 text-primary" />
           Refunded
         </span>
       )

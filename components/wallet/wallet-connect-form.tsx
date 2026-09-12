@@ -142,9 +142,9 @@ export function WalletConnectForm({
       {errorMessage && (
         <div
           role="alert"
-          className="mt-4 flex items-start gap-2.5 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-200"
+          className="mt-4 flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive"
         >
-          <AlertCircle className="size-4 text-red-400 shrink-0 mt-0.5" />
+          <AlertCircle className="size-4 text-destructive shrink-0 mt-0.5" />
           <div className="flex-1 leading-relaxed">{errorMessage}</div>
         </div>
       )}

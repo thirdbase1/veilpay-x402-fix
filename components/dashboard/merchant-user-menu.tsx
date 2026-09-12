@@ -102,7 +102,7 @@ export function MerchantUserMenu({ initialBusinessName }: MerchantUserMenuProps)
               type="button"
               disabled={isSigningOut}
               onClick={handleSignOut}
-              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-rose-400 transition hover:bg-rose-950/20 disabled:opacity-50"
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-destructive transition hover:bg-destructive/20 disabled:opacity-50"
             >
               {isSigningOut ? (
                 <Loader2 className="size-3.5 animate-spin" />

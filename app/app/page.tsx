@@ -117,16 +117,16 @@ export default function MerchantOverviewPage() {
         {error && (
           <div
             role="alert"
-            className="rounded-xl border border-rose-500/30 bg-rose-950/20 p-4 text-xs text-rose-300 flex items-center justify-between"
+            className="rounded-xl border border-destructive/30 bg-destructive/20 p-4 text-xs text-destructive flex items-center justify-between"
           >
             <div>
               <p className="font-semibold">Unable to fetch protocol state</p>
-              <p className="mt-1 text-rose-400/90">{error}</p>
+              <p className="mt-1 text-destructive/90">{error}</p>
             </div>
             <button
               type="button"
               onClick={() => loadData(false)}
-              className="font-mono text-xs underline text-rose-300 hover:text-rose-200"
+              className="font-mono text-xs underline text-destructive hover:text-destructive"
             >
               Retry
             </button>

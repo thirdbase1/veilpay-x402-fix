@@ -77,7 +77,7 @@ export function CheckoutCard({ intent }: CheckoutCardProps) {
             className="text-muted-foreground hover:text-foreground transition-colors p-1"
           >
             {copiedId ? (
-              <Check className="size-3 text-emerald-400" aria-hidden="true" />
+              <Check className="size-3 text-accent" aria-hidden="true" />
             ) : (
               <Copy className="size-3" aria-hidden="true" />
             )}
@@ -134,7 +134,7 @@ export function CheckoutCard({ intent }: CheckoutCardProps) {
               className="text-muted-foreground hover:text-foreground transition-colors p-0.5 shrink-0"
             >
               {copiedRecipient ? (
-                <Check className="size-3 text-emerald-400" aria-hidden="true" />
+                <Check className="size-3 text-accent" aria-hidden="true" />
               ) : (
                 <Copy className="size-3" aria-hidden="true" />
               )}

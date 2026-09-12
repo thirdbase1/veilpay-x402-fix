@@ -130,9 +130,9 @@ export function CheckoutAction({
   // If already verified
   if (intent.status === 'verified' || flowState === 'VERIFIED') {
     return (
-      <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-6 text-center space-y-3">
-        <CheckCircle2 className="mx-auto size-8 text-emerald-400" aria-hidden="true" />
-        <h3 className="font-mono text-base font-semibold text-emerald-400">
+      <div className="rounded-2xl border border-accent/30 bg-accent/20 p-6 text-center space-y-3">
+        <CheckCircle2 className="mx-auto size-8 text-accent" aria-hidden="true" />
+        <h3 className="font-mono text-base font-semibold text-accent">
           Payment Verified
         </h3>
         <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
@@ -178,9 +178,9 @@ export function CheckoutAction({
       {missingSecret && (
         <div
           role="alert"
-          className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 text-xs text-amber-200"
+          className="flex items-start gap-2.5 rounded-xl border border-warning/30 bg-warning/20 p-4 text-xs text-warning"
         >
-          <KeyRound className="size-4 text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
+          <KeyRound className="size-4 text-warning shrink-0 mt-0.5" aria-hidden="true" />
           <p className="leading-relaxed">
             This link does not contain the payment secret required to satisfy the intent.
             Request a complete payment link from the merchant.
@@ -268,19 +268,19 @@ export function CheckoutAction({
       {errorMessage && flowState !== 'INTEGRATION_PENDING' && (
         <div
           role="alert"
-          className="rounded-xl border border-rose-500/30 bg-rose-950/20 p-4 space-y-2 text-xs text-rose-300"
+          className="rounded-xl border border-destructive/30 bg-destructive/20 p-4 space-y-2 text-xs text-destructive"
         >
-          <div className="flex items-center gap-2 font-medium text-rose-400">
+          <div className="flex items-center gap-2 font-medium text-destructive">
             <AlertTriangle className="size-4 shrink-0" aria-hidden="true" />
             <span>Payment Submission Notice</span>
           </div>
-          <p className="text-[11px] text-rose-300/90 leading-relaxed">{errorMessage}</p>
+          <p className="text-[11px] text-destructive/90 leading-relaxed">{errorMessage}</p>
 
           {!missingSecret && (
             <button
               type="button"
               onClick={handlePay}
-              className="inline-flex items-center gap-1.5 font-mono text-[11px] text-rose-300 hover:text-white underline pt-1"
+              className="inline-flex items-center gap-1.5 font-mono text-[11px] text-destructive hover:text-white underline pt-1"
             >
               <RefreshCw className="size-3" aria-hidden="true" />
               <span>Try Again</span>

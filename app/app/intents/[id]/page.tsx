@@ -164,7 +164,7 @@ export default function PaymentIntentDetailPage({ params }: PageProps) {
         {cancelError && (
           <div
             role="alert"
-            className="rounded-xl border border-rose-500/30 bg-rose-950/20 p-3 text-xs text-rose-300"
+            className="rounded-xl border border-destructive/30 bg-destructive/20 p-3 text-xs text-destructive"
           >
             {cancelError}
           </div>

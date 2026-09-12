@@ -49,8 +49,8 @@ export function PaymentIntentRowActions({
       >
         {copied ? (
           <>
-            <Check className="size-3 text-emerald-400" />
-            <span className="text-emerald-400 font-mono text-[10px]">Copied</span>
+            <Check className="size-3 text-accent" />
+            <span className="text-accent font-mono text-[10px]">Copied</span>
           </>
         ) : (
           <>
@@ -89,7 +89,7 @@ export function PaymentIntentRowActions({
           onClick={() => onCancelClick(intent)}
           title="Cancel this payment intent"
           aria-label="Cancel intent"
-          className="inline-flex size-7 items-center justify-center rounded-md border border-rose-500/30 bg-rose-950/20 text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-rose-500"
+          className="inline-flex size-7 items-center justify-center rounded-md border border-destructive/30 bg-destructive/20 text-destructive hover:bg-destructive/40 hover:text-destructive transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive"
         >
           <Ban className="size-3" />
         </button>

@@ -154,16 +154,16 @@ export default function PaymentIntentsListPage() {
         {error && (
           <div
             role="alert"
-            className="rounded-xl border border-rose-500/30 bg-rose-950/20 p-4 text-xs text-rose-300 flex items-start justify-between"
+            className="rounded-xl border border-destructive/30 bg-destructive/20 p-4 text-xs text-destructive flex items-start justify-between"
           >
             <div>
               <p className="font-semibold">Unable to fetch protocol state</p>
-              <p className="mt-1 text-rose-400/90">{error}</p>
+              <p className="mt-1 text-destructive/90">{error}</p>
             </div>
             <button
               type="button"
               onClick={() => loadData(false)}
-              className="font-mono text-xs text-rose-300 underline hover:text-rose-200"
+              className="font-mono text-xs text-destructive underline hover:text-destructive"
             >
               Retry
             </button>

@@ -52,32 +52,32 @@ const STATUS_META: Record<
   verified: {
     label: 'Verified',
     icon: CheckCircle2,
-    badge: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
+    badge: 'border-accent/30 bg-accent/10 text-accent',
   },
   awaiting_payment: {
     label: 'Awaiting Payment',
     icon: Hourglass,
-    badge: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
+    badge: 'border-warning/30 bg-warning/10 text-warning',
   },
   verifying: {
     label: 'Verifying',
     icon: Activity,
-    badge: 'border-sky-500/30 bg-sky-500/10 text-sky-400',
+    badge: 'border-primary/30 bg-primary/10 text-primary',
   },
   expired: {
     label: 'Expired',
     icon: Clock,
-    badge: 'border-zinc-500/30 bg-zinc-500/10 text-zinc-400',
+    badge: 'border-border/30 bg-muted/10 text-muted-foreground',
   },
   failed: {
     label: 'Failed',
     icon: XCircle,
-    badge: 'border-rose-500/30 bg-rose-500/10 text-rose-400',
+    badge: 'border-destructive/30 bg-destructive/10 text-destructive',
   },
   cancelled: {
     label: 'Cancelled',
     icon: Ban,
-    badge: 'border-zinc-500/30 bg-zinc-500/10 text-zinc-400',
+    badge: 'border-border/30 bg-muted/10 text-muted-foreground',
   },
 }
 
@@ -209,7 +209,7 @@ export default function ExplorerPage() {
           ) : error ? (
             <div
               role="alert"
-              className="mt-4 rounded-xl border border-rose-500/30 bg-rose-950/20 p-4 text-xs text-rose-300"
+              className="mt-4 rounded-xl border border-destructive/30 bg-destructive/20 p-4 text-xs text-destructive"
             >
               Unable to reach the explorer feed. Retrying automatically…
             </div>

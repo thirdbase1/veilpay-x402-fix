@@ -38,13 +38,13 @@ function getEventIcon(type: ActivityEventType) {
     case 'PAYMENT_INTENT_CREATED':
       return <PlusCircle className="size-4 text-primary shrink-0" />
     case 'PAYMENT_VERIFIED':
-      return <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
+      return <CheckCircle2 className="size-4 text-accent shrink-0" />
     case 'PAYMENT_INTENT_CANCELLED':
-      return <XCircle className="size-4 text-amber-400 shrink-0" />
+      return <XCircle className="size-4 text-warning shrink-0" />
     case 'PAYMENT_INTENT_EXPIRED':
       return <Clock className="size-4 text-muted-foreground shrink-0" />
     case 'VERIFICATION_STARTED':
-      return <ShieldCheck className="size-4 text-sky-400 shrink-0" />
+      return <ShieldCheck className="size-4 text-primary shrink-0" />
     case 'PAYMENT_FAILED':
       return <AlertTriangle className="size-4 text-destructive shrink-0" />
     default:

@@ -141,7 +141,7 @@ export function PaymentIntentTable({
                         className="text-muted-foreground hover:text-foreground transition p-0.5 rounded"
                       >
                         {copiedId === intent.id ? (
-                          <Check className="size-3 text-emerald-400" />
+                          <Check className="size-3 text-accent" />
                         ) : (
                           <Copy className="size-3" />
                         )}
@@ -165,7 +165,7 @@ export function PaymentIntentTable({
                     {formattedDate}
                   </td>
                   <td className="whitespace-nowrap px-5 py-3.5 text-muted-foreground font-sans">
-                    <span className={isExpired && intent.status === 'awaiting_payment' ? 'text-amber-400 font-medium' : ''}>
+                    <span className={isExpired && intent.status === 'awaiting_payment' ? 'text-warning font-medium' : ''}>
                       {formattedExpiry}
                     </span>
                   </td>
@@ -224,7 +224,7 @@ export function PaymentIntentTable({
                     aria-label="Copy intent ID"
                   >
                     {copiedId === intent.id ? (
-                      <Check className="size-3.5 text-emerald-400" />
+                      <Check className="size-3.5 text-accent" />
                     ) : (
                       <Copy className="size-3.5" />
                     )}

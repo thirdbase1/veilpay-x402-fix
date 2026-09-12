@@ -71,7 +71,7 @@ export function PaymentQR({
   if (error) {
     return (
       <div className="flex size-48 flex-col items-center justify-center rounded-xl border border-border bg-card/60 p-4 text-center text-xs text-muted-foreground">
-        <p className="text-rose-400">QR Generation Error</p>
+        <p className="text-destructive">QR Generation Error</p>
         <p className="mt-1 text-[10px]">{error}</p>
       </div>
     )

@@ -117,7 +117,7 @@ export default function OnboardingPage() {
                   <div
                     className={`h-1.5 rounded-full transition-colors ${
                       isDone
-                        ? 'bg-emerald-400'
+                        ? 'bg-accent'
                         : isCurrent
                         ? 'bg-primary'
                         : 'bg-muted/60'
@@ -143,9 +143,9 @@ export default function OnboardingPage() {
             {errorMessage && (
               <div
                 role="alert"
-                className="mb-6 flex items-start gap-2.5 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-200"
+                className="mb-6 flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive"
               >
-                <AlertCircle className="size-4 text-red-400 shrink-0 mt-0.5" />
+                <AlertCircle className="size-4 text-destructive shrink-0 mt-0.5" />
                 <div className="flex-1 leading-relaxed">{errorMessage}</div>
               </div>
             )}
@@ -273,7 +273,7 @@ export default function OnboardingPage() {
 
                   <div className="rounded-lg border border-border/60 bg-muted/20 p-3.5 space-y-1.5">
                     <div className="flex items-center gap-2 text-xs font-medium text-foreground">
-                      <ShieldCheck className="size-4 text-emerald-400" />
+                      <ShieldCheck className="size-4 text-accent" />
                       <span>Privacy Settlement Architecture</span>
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed">
@@ -460,7 +460,7 @@ export default function OnboardingPage() {
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-muted-foreground">Privacy Preset</span>
-                    <span className="capitalize text-emerald-400 font-medium">
+                    <span className="capitalize text-accent font-medium">
                       {privacyPreset} ZK Mode
                     </span>
                   </div>
