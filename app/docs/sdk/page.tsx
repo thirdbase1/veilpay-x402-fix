@@ -155,6 +155,15 @@ const [paymentSecret, setPaymentSecret] = useState('')
   const [executionTimeMs, setExecutionTimeMs] = useState<number | null>(null)
   const [copiedResult, setCopiedResult] = useState(false)
 
+  // Live timestamps in the code preview must only exist client-side after
+  // mount, otherwise server and client render different text (hydration error).
+  const [previewExpiry, setPreviewExpiry] = useState<string | null>(null)
+  useEffect(() => {
+    setPreviewExpiry(
+      new Date(Date.now() + Number(expiryHours || 24) * 3600 * 1000).toISOString(),
+    )
+  }, [expiryHours])
+
   // Update target intent ID if URL parameter exists
   useEffect(() => {
     const idParam = searchParams.get('id')
@@ -281,7 +290,7 @@ const conditions = {
   },
   recipient: '${recipient}',
   reference: '${reference}',
-  expiresAt: '${new Date(Date.now() + Number(expiryHours || 24) * 3600 * 1000).toISOString()}',
+  expiresAt: '${previewExpiry ?? '<expiry timestamp>'}',
 }
 
 const { intent, midnightStatus } = await createPaymentIntentApi(conditions)

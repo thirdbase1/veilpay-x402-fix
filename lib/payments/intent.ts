@@ -72,10 +72,24 @@ export function isValidIntentId(id: unknown): id is string {
   return typeof id === 'string' && /^pi_[a-zA-Z0-9_-]{8,64}$/.test(id.trim())
 }
 
-/** Check if an address string is valid */
+/**
+ * Midnight addresses use Bech32m encoding with an `mn_` human-readable part:
+ *   mn_addr1…, mn_shield-addr1…, mn_dust1…
+ * Testnet/preprod variants insert the network id: mn_addr_preprod1…
+ * The data part uses the Bech32 charset (excludes 1, b, i, o).
+ * Legacy internal account identifiers (alphanumeric/underscore) are accepted
+ * for backwards compatibility.
+ */
+const MIDNIGHT_BECH32M_ADDRESS =
+  /^mn_(addr|shield-addr|dust)(_(preprod|test|dev))?1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{40,}$/i
+
+/** Check if an address string is a valid Midnight or legacy account address */
 export function isValidAddress(address: unknown): address is string {
   if (typeof address !== 'string') return false
   const trimmed = address.trim()
+  if (MIDNIGHT_BECH32M_ADDRESS.test(trimmed)) {
+    return trimmed.length <= 256
+  }
   return (
     trimmed.length >= 8 &&
     trimmed.length <= 128 &&
@@ -162,7 +176,7 @@ export function validateConditions(conditions: PaymentConditions): ValidationIss
   } else if (!isValidAddress(conditions.recipient)) {
     issues.push({
       field: 'recipient',
-      message: 'Recipient address must be 8-128 characters alphanumeric/underscore.',
+      message: 'Recipient must be a valid Midnight address (e.g. mn_addr1… or mn_shield-addr1…).',
     })
   }
 

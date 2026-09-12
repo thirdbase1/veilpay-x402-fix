@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       const trimmedAddr = receivingAddress.trim()
       if (!isValidAddress(trimmedAddr)) {
         return NextResponse.json(
-          { error: 'Receiving address must be 8-128 alphanumeric characters or underscores.' },
+          { error: 'Receiving address must be a valid Midnight address (e.g. mn_addr1… or mn_shield-addr1…).' },
           { status: 400 },
         )
       }
