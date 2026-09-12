@@ -20,10 +20,15 @@ export function DecryptText({
   duration?: number
   className?: string
 }) {
+  // Deterministic initial scramble: Math.random() here would make the server
+  // and client render different glyphs and fail hydration. Deriving the noise
+  // from the text itself keeps the scrambled look while matching on both sides.
   const [display, setDisplay] = useState(() =>
     text
       .split('')
-      .map((c) => (c === ' ' ? ' ' : NOISE[Math.floor(Math.random() * NOISE.length)]))
+      .map((c, i) =>
+        c === ' ' ? ' ' : NOISE[(i * 7 + c.charCodeAt(0) * 3) % NOISE.length],
+      )
       .join(''),
   )
 
