@@ -1,29 +1,40 @@
 /**
- * Server-only VeilPay protocol integration.
+ * Server-only VeilPay v2 protocol integration (read path).
  *
- * Follows vendor/veilpay/docs/WEBSITE-INTEGRATION.md:
- *  - All contract interaction happens server-side; the browser never holds keys.
- *  - The gateway stack authenticates to the preprod indexer with the merchant
- *    seed (VEILPAY_SEED) and caches its session in cli/.veilpay-state/.
- *  - The compiled contract artifacts (contract/src/managed/) are produced by
- *    the veilpay repo CI ("veilpay-managed" artifact) and must be present for
- *    the API module to load.
+ * Follows vendor/veilpay/docs/MIGRATION-V2-INVOICE.md:
+ *  - The live web app does NOT use the 1AM gateway (api-preprod.1am.xyz).
+ *    That endpoint is a DEPLOY-TIME workaround only (sponsored fees, hosted
+ *    proving, authenticated indexer session). Shipping or reusing
+ *    cli/.veilpay-state/gw_session.json in the site is explicitly forbidden.
+ *  - Runtime reads use the public, unauthenticated Midnight preprod indexer
+ *    plus the committed compiled ledger decoder under
+ *    vendor/veilpay/contract/src/managed/veilpay2/.
+ *  - Tx submission happens client-side: users sign via the Lace/1AM browser
+ *    extension and pay fees from their own DUST. The server never holds keys.
  *
- * The vendored workspaces are loaded through a runtime dynamic import so the
- * Next.js bundler never tries to inline the midnight-js / polkadot dependency
- * tree; they resolve their own node_modules from vendor/veilpay at runtime.
+ * The vendored midnight-js packages are loaded through a runtime dynamic
+ * import so the Next.js bundler never tries to inline the dependency tree;
+ * they resolve their own node_modules from vendor/veilpay at runtime.
  */
 
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-/** Deployed VeilPay contract on Midnight preprod (from the repo README). */
+/** Live VeilPay v2 (shielded) contract on Midnight preprod (deployments/preprod-v2.json). */
 export const VEILPAY_CONTRACT_ADDRESS =
   process.env.VEILPAY_CONTRACT_ADDRESS?.trim() ||
-  '0x304666ce3bb47edab2267a88eb650330042e1d6b1bea347d8f391b3fd09d719f'
+  '0x85a0f911bb554bf4b7e9a69bb2ee2c20a03b823b20274eade45c6b18f53583a7'
 
 export const VEILPAY_NETWORK = 'preprod'
+
+/** Public, unauthenticated preprod indexer (MIGRATION-V2-INVOICE.md). */
+export const VEILPAY_INDEXER_HTTP =
+  process.env.VEILPAY_INDEXER_HTTP?.trim() ||
+  'https://indexer.preprod.midnight.network/api/v3/graphql'
+export const VEILPAY_INDEXER_WS =
+  process.env.VEILPAY_INDEXER_WS?.trim() ||
+  'wss://indexer.preprod.midnight.network/api/v3/graphql/ws'
 
 const VENDOR_ROOT = join(process.cwd(), 'vendor', 'veilpay')
 const MANAGED_ARTIFACT = join(
@@ -31,7 +42,7 @@ const MANAGED_ARTIFACT = join(
   'contract',
   'src',
   'managed',
-  'veilpay',
+  'veilpay2',
   'contract',
   'index.js',
 )
@@ -40,22 +51,17 @@ export interface VeilPayReadiness {
   ready: boolean
   network: string
   contractAddress: string
-  seedConfigured: boolean
   artifactsPresent: boolean
   missing: string[]
 }
 
 export function getVeilPayReadiness(): VeilPayReadiness {
-  const seedConfigured = Boolean(process.env.VEILPAY_SEED?.trim())
   const artifactsPresent = existsSync(MANAGED_ARTIFACT)
 
   const missing: string[] = []
-  if (!seedConfigured) {
-    missing.push('VEILPAY_SEED: merchant wallet seed phrase used to authenticate the gateway session')
-  }
   if (!artifactsPresent) {
     missing.push(
-      'Compiled contract artifacts: run `compact compile` (or extract the "veilpay-managed" CI artifact) into vendor/veilpay/contract/src/managed/',
+      'Compiled contract artifacts: extract the "veilpay-managed" CI artifact into vendor/veilpay/contract/src/managed/',
     )
   }
 
@@ -63,7 +69,6 @@ export function getVeilPayReadiness(): VeilPayReadiness {
     ready: missing.length === 0,
     network: VEILPAY_NETWORK,
     contractAddress: VEILPAY_CONTRACT_ADDRESS,
-    seedConfigured,
     artifactsPresent,
     missing,
   }
@@ -80,38 +85,6 @@ export class VeilPayUnavailableError extends Error {
   }
 }
 
-/** Minimal structural types for the vendored API surface we use. */
-export interface VeilPayApi {
-  /** Raw contract address (no 0x prefix), as held by the joined contract. */
-  deployedContractAddress: string
-  providers: unknown
-  createIntent(amount: bigint, expiresAt: bigint, paymentSecret: Uint8Array): Promise<bigint>
-  pay(intentId: bigint, paymentSecret: Uint8Array): Promise<unknown>
-  refund(intentId: bigint, amount: bigint): Promise<unknown>
-  cancel(intentId: bigint): Promise<unknown>
-  isPaid(intentId: bigint): Promise<boolean>
-}
-
-interface VeilPayLedgerIntent {
-  merchantId: unknown
-  amount: unknown
-  expiresAt: unknown
-  status: unknown
-  paidAmount: unknown
-  refundedAmount: unknown
-}
-
-export type VeilPayChainStatus = 'ACTIVE' | 'PAID' | 'REFUNDED' | 'CANCELLED'
-
-export interface VeilPayChainIntent {
-  id: string
-  status: VeilPayChainStatus
-  amount: string
-  paidAmount: string
-  refundedAmount: string
-  expiresAtOps: string
-}
-
 function dynamicImport(specifier: string): Promise<unknown> {
   // Escape the bundler: the vendored ESM workspaces must resolve their own
   // dependencies at runtime, not be inlined by Turbopack/webpack.
@@ -121,84 +94,126 @@ function dynamicImport(specifier: string): Promise<unknown> {
   return runtimeImport(specifier)
 }
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __veilpay_api_promise__: Promise<VeilPayApi> | undefined
+/** v2 on-chain intent status enum order (managed ledger stores it numerically). */
+export type VeilPayChainStatus = 'ACTIVE' | 'PAID' | 'REFUNDED' | 'CANCELLED'
+
+/** v2 Intent struct projected to plain JSON-safe values. */
+export interface VeilPayChainIntent {
+  id: string
+  status: VeilPayChainStatus
+  /** Requested amount in the invoice's token base units. */
+  amount: string
+  paidAmount: string
+  refundedAmount: string
+  /** Ledger-operations deadline (sequence units), NOT wall-clock time. */
+  expiresAtOps: string
+  /** 32-byte token color hex; all-zeros means an open invoice (any token). */
+  tokenColor: string
+  /** 32-byte merchant zswap coin public key hex (settlement destination). */
+  merchantCoinPk: string
+  /** Receipt commitment hex when the invoice is settled, else null. */
+  receipt: string | null
 }
 
-async function buildVeilPayApi(): Promise<VeilPayApi> {
+/** Parsed v2 ledger shape produced by the managed contract's ledger() function. */
+interface ParsedLedger {
+  sequence: bigint
+  intents: {
+    member(id: bigint): boolean
+    lookup(id: bigint): {
+      amount: unknown
+      expiresAt: unknown
+      status: unknown
+      paidAmount: unknown
+      refundedAmount: unknown
+      tokenColor: unknown
+      merchantCoinPk: unknown
+    }
+  }
+  receipts: {
+    member(id: bigint): boolean
+    lookup(id: bigint): unknown
+  }
+}
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __veilpay_ledger_provider__: Promise<{
+    queryContractState(address: string): Promise<{ data: unknown } | null>
+  }> | undefined
+}
+
+async function getLedgerProvider() {
+  if (!globalThis.__veilpay_ledger_provider__) {
+    globalThis.__veilpay_ledger_provider__ = (async () => {
+      const vendorModules = join(VENDOR_ROOT, 'node_modules')
+      const { setNetworkId } = (await dynamicImport(
+        pathToFileURL(join(vendorModules, '@midnight-ntwrk', 'midnight-js-network-id')).href,
+      )) as { setNetworkId(id: string): void }
+      setNetworkId('preprod')
+
+      const { indexerPublicDataProvider } = (await dynamicImport(
+        pathToFileURL(
+          join(vendorModules, '@midnight-ntwrk', 'midnight-js-indexer-public-data-provider'),
+        ).href,
+      )) as {
+        indexerPublicDataProvider: (
+          indexerUri: string,
+          indexerWsUri: string,
+        ) => { queryContractState(address: string): Promise<{ data: unknown } | null> }
+      }
+
+      return indexerPublicDataProvider(VEILPAY_INDEXER_HTTP, VEILPAY_INDEXER_WS)
+    })().catch((err) => {
+      // Do not cache failures: a transient indexer outage should retry.
+      globalThis.__veilpay_ledger_provider__ = undefined
+      throw err
+    })
+  }
+  return globalThis.__veilpay_ledger_provider__
+}
+
+async function loadLedgerDecoder(): Promise<(data: unknown) => ParsedLedger> {
+  const { ledger } = (await dynamicImport(pathToFileURL(MANAGED_ARTIFACT).href)) as {
+    ledger: (data: unknown) => ParsedLedger
+  }
+  return ledger
+}
+
+/**
+ * Read the live v2 ledger through the public indexer. Retries briefly —
+ * the indexer intermittently returns null for very recent contracts.
+ */
+export async function readVeilPayLedger(): Promise<ParsedLedger> {
   const readiness = getVeilPayReadiness()
   if (!readiness.ready) {
     throw new VeilPayUnavailableError(readiness.missing)
   }
 
-  const bootstrapUrl = pathToFileURL(join(VENDOR_ROOT, 'gateway-bootstrap.mjs')).href
-  const { VeilPayAPI, buildGatewayStack } = (await dynamicImport(bootstrapUrl)) as {
-    VeilPayAPI: { join(providers: unknown, address: string, logger?: unknown): Promise<VeilPayApi> }
-    buildGatewayStack: (
-      logger?: { info: (m: string) => void; warn?: (m: string) => void },
-      opts?: { privateStateStoreName?: string },
-    ) => Promise<{ providers: unknown; close: () => Promise<void> }>
-  }
-
-  const stack = await buildGatewayStack({
-    info: (m) => console.log(`[veilpay] ${m}`),
-    warn: (m) => console.warn(`[veilpay] ${m}`),
-  })
-
-  // midnight-js requires the address WITHOUT the 0x prefix.
+  const provider = await getLedgerProvider()
   const address = VEILPAY_CONTRACT_ADDRESS.replace(/^0x/, '')
-  return VeilPayAPI.join(stack.providers, address)
-}
 
-/** Get (or build) the joined VeilPay API instance. Throws if not configured. */
-export function getVeilPayAPI(): Promise<VeilPayApi> {
-  if (!globalThis.__veilpay_api_promise__) {
-    globalThis.__veilpay_api_promise__ = buildVeilPayApi().catch((err) => {
-      // Do not cache failures: a fixed env/artifact setup should succeed on retry.
-      globalThis.__veilpay_api_promise__ = undefined
-      throw err
-    })
+  let state: { data: unknown } | null = null
+  for (let attempt = 1; attempt <= 5 && !state; attempt++) {
+    state = await provider.queryContractState(address)
+    if (!state) await new Promise((r) => setTimeout(r, 3000))
   }
-  return globalThis.__veilpay_api_promise__
-}
-
-/** Parsed ledger shape produced by the managed contract's ledger() function. */
-interface ParsedLedger {
-  sequence: bigint
-  intents: {
-    member(id: bigint): boolean
-    lookup(id: bigint): VeilPayLedgerIntent
-  }
-}
-
-async function readLedger(api: VeilPayApi): Promise<ParsedLedger> {
-  const providers = api.providers as {
-    publicDataProvider: {
-      queryContractState(contract: unknown): Promise<{ data: unknown } | null>
-    }
-  }
-  const state = await providers.publicDataProvider.queryContractState(
-    api.deployedContractAddress,
-  )
   if (!state?.data) {
-    throw new Error('Unable to read VeilPay contract ledger state from the indexer.')
+    throw new Error('Unable to read VeilPay contract ledger state from the public indexer.')
   }
-  const { ledger } = (await dynamicImport(
-    pathToFileURL(join(VENDOR_ROOT, 'contract', 'src', 'managed', 'veilpay', 'contract', 'index.js')).href,
-  )) as { ledger: (data: unknown) => ParsedLedger }
+
+  const ledger = await loadLedgerDecoder()
   return ledger(state.data)
 }
 
-/** Read the current ledger sequence (used to anchor intent TTLs). */
-export async function getLedgerSequence(api: VeilPayApi): Promise<number> {
-  const ledgerState = await readLedger(api)
-  return Number(ledgerState.sequence)
+function toHex(value: unknown): string {
+  if (value instanceof Uint8Array) {
+    return Array.from(value, (b) => b.toString(16).padStart(2, '0')).join('')
+  }
+  return String(value)
 }
 
 function readStatusTag(status: unknown): VeilPayChainStatus {
-  // The managed ledger stores IntentStatus as a numeric enum
-  // (ACTIVE = 0, PAID = 1, REFUNDED = 2, CANCELLED = 3).
   const STATUS_NAMES: Record<string, VeilPayChainStatus> = {
     '0': 'ACTIVE',
     '1': 'PAID',
@@ -213,16 +228,23 @@ function readStatusTag(status: unknown): VeilPayChainStatus {
   return STATUS_NAMES[key] ?? (key as VeilPayChainStatus)
 }
 
-/** Read one intent directly from the on-chain ledger. */
-export async function getChainIntent(
-  api: VeilPayApi,
-  chainIntentId: string,
-): Promise<VeilPayChainIntent | null> {
-  const ledgerState = await readLedger(api)
+/** Read the current ledger sequence (invoice ids are dense: next = sequence + 1). */
+export async function getLedgerSequence(): Promise<number> {
+  const ledgerState = await readVeilPayLedger()
+  return Number(ledgerState.sequence)
+}
+
+/** Read one invoice directly from the on-chain v2 ledger. */
+export async function getChainIntent(chainIntentId: string): Promise<VeilPayChainIntent | null> {
+  const ledgerState = await readVeilPayLedger()
   const id = BigInt(chainIntentId)
   if (!ledgerState.intents.member(id)) return null
 
   const raw = ledgerState.intents.lookup(id)
+  const receipt = ledgerState.receipts.member(id)
+    ? toHex(ledgerState.receipts.lookup(id))
+    : null
+
   return {
     id: chainIntentId,
     status: readStatusTag(raw.status),
@@ -230,10 +252,13 @@ export async function getChainIntent(
     paidAmount: String(raw.paidAmount ?? '0'),
     refundedAmount: String(raw.refundedAmount ?? '0'),
     expiresAtOps: String(raw.expiresAt ?? '0'),
+    tokenColor: toHex(raw.tokenColor),
+    merchantCoinPk: toHex(raw.merchantCoinPk),
+    receipt,
   }
 }
 
-/** Map an on-chain intent status to the application status model. */
+/** Map an on-chain invoice status to the application status model. */
 export function mapChainStatusToAppStatus(status: VeilPayChainStatus): string {
   switch (status) {
     case 'ACTIVE':
@@ -249,7 +274,12 @@ export function mapChainStatusToAppStatus(status: VeilPayChainStatus): string {
   }
 }
 
-/** Generate a fresh 32-byte payment secret as hex. */
+/** True when the hex string is all zeros (v2 "open invoice" token color). */
+export function isOpenTokenColor(hex: string): boolean {
+  return /^0*$/.test(hex)
+}
+
+/** Generate a fresh 32-byte claim code (payment secret) as hex. */
 export function generatePaymentSecret(): string {
   const bytes = new Uint8Array(32)
   crypto.getRandomValues(bytes)

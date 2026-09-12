@@ -305,6 +305,8 @@ export async function POST(request: Request) {
     const chainIntentId = await api.createIntent(
       amountMicro,
       BigInt(expiresAtOps),
+      new Uint8Array(32), // open intent: accept any shielded token color
+      api.merchantCoinPk,
       secretToBytes(paymentSecret),
     )
 

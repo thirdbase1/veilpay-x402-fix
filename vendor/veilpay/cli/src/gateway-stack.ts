@@ -394,6 +394,7 @@ export function withPollingWatches(
   session: GatewaySession,
   pendingMidnightHashes: string[],
   logger: Logger,
+  deployTxHash?: string,
 ): PublicDataProvider {
   return {
     ...base,
@@ -406,7 +407,12 @@ export function withPollingWatches(
     },
     async watchForDeployTxData(contractAddress: string): Promise<FinalizedTxData> {
       logger.info(`watchForDeployTxData: polling indexer for deploy of ${contractAddress}`);
-      const tx = await pollDeployTx(session, contractAddress, logger);
+      // The gateway indexer's deploy-by-address lookup is flaky (returns null
+      // for long-deployed contracts); when the deploy tx hash is known, poll
+      // by hash instead, which the indexer answers reliably.
+      const tx = deployTxHash
+        ? await pollTxByHash(session, deployTxHash, logger)
+        : await pollDeployTx(session, contractAddress, logger);
       const actionIndex = (tx.contractActions ?? []).findIndex(
         (a: any) => a.address === contractAddress,
       );
@@ -442,7 +448,7 @@ export interface GatewayStack2 {
  */
 export async function buildGatewayStack(
   logger: Logger,
-  opts: { version?: ContractVersion; privateStateStoreName?: string } = {},
+  opts: { version?: ContractVersion; privateStateStoreName?: string; deployTxHash?: string } = {},
 ): Promise<GatewayStack & GatewayStack2> {
   const version = opts.version ?? 'v1';
   setNetworkId('preprod');
@@ -594,7 +600,13 @@ export async function buildGatewayStack(
       privateStoragePasswordProvider: () => 'VeilPay-Local-2026!',
       accountId: seed,
     }) as unknown as VeilPayProviders['privateStateProvider'] & VeilPay2Providers['privateStateProvider'],
-    publicDataProvider: withPollingWatches(basePublicData, session, pendingMidnightHashes, logger),
+    publicDataProvider: withPollingWatches(
+      basePublicData,
+      session,
+      pendingMidnightHashes,
+      logger,
+      opts.deployTxHash?.replace(/^0x/, ''),
+    ),
     zkConfigProvider,
     proofProvider: httpClientProofProvider(GATEWAY, zkConfigProvider, {
       headers: { 'X-Session-Token': session.token },

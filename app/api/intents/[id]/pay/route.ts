@@ -204,8 +204,37 @@ export async function POST(
       )
     }
 
-    // 5. Submit the real pay circuit call through the authenticated gateway
-    await api.pay(chainId, secretToBytes(paymentSecret))
+    // 5. Submit the real v2 pay circuit call through the authenticated gateway.
+    // v2 settles real shielded value, so the payer must supply a spendable
+    // zswap coin. Until the payer wallet integration (upstream Phase 2) lands,
+    // the coin can be provided via env, mirroring the vendor CLI.
+    const coinValue = process.env.VEILPAY_PAY_COIN_VALUE
+    if (!coinValue) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'PAYER_WALLET_REQUIRED',
+          message:
+            'v2 settlement moves real shielded value. Configure a funded payer coin (VEILPAY_PAY_COIN_VALUE/_COLOR/_NONCE/_MT_INDEX) to settle on-chain.',
+        },
+        { status: 503 },
+      )
+    }
+    const unhex32 = (hex: string, label: string): Uint8Array => {
+      const clean = hex.replace(/^0x/, '')
+      if (!/^[0-9a-fA-F]{64}$/.test(clean)) throw new Error(`invalid ${label} hex`)
+      return new Uint8Array(clean.match(/.{2}/g)!.map((b) => parseInt(b, 16)))
+    }
+    await api.pay(chainId, secretToBytes(paymentSecret), {
+      value: BigInt(coinValue),
+      color: process.env.VEILPAY_PAY_COIN_COLOR
+        ? unhex32(process.env.VEILPAY_PAY_COIN_COLOR, 'coin color')
+        : new Uint8Array(32),
+      nonce: process.env.VEILPAY_PAY_COIN_NONCE
+        ? unhex32(process.env.VEILPAY_PAY_COIN_NONCE, 'coin nonce')
+        : crypto.getRandomValues(new Uint8Array(32)),
+      mtIndex: BigInt(process.env.VEILPAY_PAY_COIN_MT_INDEX ?? '0'),
+    })
 
     // 6. Confirm settlement from the ledger. The indexer lags the block that
     // settled the pay tx, so poll the ledger briefly before giving up.

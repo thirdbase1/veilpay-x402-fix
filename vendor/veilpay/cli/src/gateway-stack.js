@@ -337,7 +337,7 @@ async function pollDeployTx(session, contractAddress, logger, timeoutMs = 240_00
  *  - watchForDeployTxData: polls contractAction(address) directly, which the
  *    gateway indexer answers fine.
  */
-export function withPollingWatches(base, session, pendingMidnightHashes, logger) {
+export function withPollingWatches(base, session, pendingMidnightHashes, logger, deployTxHash) {
     return {
         ...base,
         async watchForTxData(txId) {
@@ -348,7 +348,12 @@ export function withPollingWatches(base, session, pendingMidnightHashes, logger)
         },
         async watchForDeployTxData(contractAddress) {
             logger.info(`watchForDeployTxData: polling indexer for deploy of ${contractAddress}`);
-            const tx = await pollDeployTx(session, contractAddress, logger);
+            // The gateway indexer's deploy-by-address lookup is flaky (returns
+            // null for long-deployed contracts); when the deploy tx hash is
+            // known, poll by hash instead, which the indexer answers reliably.
+            const tx = deployTxHash
+                ? await pollTxByHash(session, deployTxHash, logger)
+                : await pollDeployTx(session, contractAddress, logger);
             const actionIndex = (tx.contractActions ?? []).findIndex((a) => a.address === contractAddress);
             const txId = actionIndex >= 0 ? tx.identifiers?.[actionIndex] : tx.identifiers?.[0] ?? contractAddress;
             return toFinalizedTxData(tx, txId);
@@ -499,7 +504,7 @@ export async function buildGatewayStack(logger, opts = {}) {
             privateStoragePasswordProvider: () => 'VeilPay-Local-2026!',
             accountId: seed,
         }),
-        publicDataProvider: withPollingWatches(basePublicData, session, pendingMidnightHashes, logger),
+        publicDataProvider: withPollingWatches(basePublicData, session, pendingMidnightHashes, logger, opts.deployTxHash?.replace(/^0x/, '')),
         zkConfigProvider,
         proofProvider: httpClientProofProvider(GATEWAY, zkConfigProvider, {
             headers: { 'X-Session-Token': session.token },
