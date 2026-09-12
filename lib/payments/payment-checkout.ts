@@ -64,6 +64,8 @@ export async function submitCheckoutPayment(
   payload: {
     paymentSecret: string
     network?: string
+    /** Reference of the wallet-broadcast transfer (dApp-connector submitTransaction). */
+    txReference?: string
   },
 ): Promise<PaySubmitResponse> {
   const res = await fetch(`/api/intents/${encodeURIComponent(intentId)}/pay`, {

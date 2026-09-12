@@ -123,10 +123,14 @@ async function resolveAddress(api: MidnightProviderApi): Promise<string | undefi
 }
 
 /**
- * Connect a detected wallet provider and resolve the connected account
- * address. The extension prompts the user to approve the connection.
+ * Connect a detected wallet provider and return the raw connected API plus
+ * the resolved account address. The extension prompts the user to approve
+ * the connection. Payment execution needs the API object itself
+ * (makeTransfer/submitTransaction); sign-in only needs the address.
  */
-export async function enableWallet(id: WalletProviderId): Promise<string> {
+export async function connectWalletApi(
+  id: WalletProviderId,
+): Promise<{ api: MidnightProviderApi; address: string }> {
   const win = getWindow()
   if (!win) throw new Error('Wallet connection requires a browser environment.')
 
@@ -180,5 +184,14 @@ export async function enableWallet(id: WalletProviderId): Promise<string> {
   if (!address) {
     throw new Error('The wallet did not return an account address.')
   }
+  return { api, address }
+}
+
+/**
+ * Connect a detected wallet provider and resolve the connected account
+ * address. The extension prompts the user to approve the connection.
+ */
+export async function enableWallet(id: WalletProviderId): Promise<string> {
+  const { address } = await connectWalletApi(id)
   return address
 }

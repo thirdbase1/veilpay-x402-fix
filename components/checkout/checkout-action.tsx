@@ -6,6 +6,7 @@ import {
   type CheckoutFlowState,
   submitCheckoutPayment,
 } from '@/lib/payments/payment-checkout'
+import { payIntentWithWallet } from '@/lib/wallet/pay'
 import {
   Lock,
   Loader2,
@@ -15,6 +16,7 @@ import {
   RefreshCw,
   ExternalLink,
   KeyRound,
+  Wallet,
 } from 'lucide-react'
 
 interface CheckoutActionProps {
@@ -67,11 +69,26 @@ export function CheckoutAction({
       // Step 1: Preparing Payment
       setFlowState('PREPARING_PAYMENT')
 
-      // Step 2: Submitting the pay circuit call through the VeilPay gateway
+      // Step 2: Connect the wallet extension (user approves the session)…
+      setFlowState('CONNECTING_WALLET')
+
+      // Step 3: …then request the transfer. The wallet pops its native
+      // approval dialog showing the exact token amount and merchant recipient
+      // (dApp-connector makeTransfer → submitTransaction).
+      const { txReference } = await payIntentWithWallet({
+        recipient: intent.conditions.recipient,
+        amount: intent.conditions.amount.amount,
+        asset: intent.conditions.amount.asset,
+        onAwaitingApproval: () => setFlowState('AWAITING_WALLET_APPROVAL'),
+      })
+
+      // Step 4: Broadcast done — submit the tx reference + payment secret to
+      // the VeilPay gateway for on-chain condition verification.
       setFlowState('SUBMITTING_PAYMENT')
       const response = await submitCheckoutPayment(intent.id, {
         paymentSecret,
         network: intent.network,
+        txReference,
       })
 
       if (response.success && response.status === 'verified' && response.intent) {
@@ -95,9 +112,16 @@ export function CheckoutAction({
         setErrorMessage(response.message || response.error || 'Payment execution failed on protocol layer.')
       }
     } catch (err: unknown) {
-      setFlowState('PAYMENT_FAILED')
       const msg = err instanceof Error ? err.message : 'Network error during payment submission'
-      setErrorMessage(msg)
+      // User denying the approval dialog in the extension is a distinct,
+      // recoverable state — not a protocol failure.
+      if (/reject|denied|refus|cancel/i.test(msg)) {
+        setFlowState('WALLET_REJECTED')
+        setErrorMessage('Payment was rejected in your wallet. You can try again.')
+      } else {
+        setFlowState('PAYMENT_FAILED')
+        setErrorMessage(msg)
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -124,7 +148,10 @@ export function CheckoutAction({
   return (
     <div className="space-y-4">
       {/* Live State Tracker (when interacting) */}
-      {flowState !== 'IDLE' && flowState !== 'INTEGRATION_PENDING' && (
+      {flowState !== 'IDLE' &&
+        flowState !== 'INTEGRATION_PENDING' &&
+        flowState !== 'WALLET_REJECTED' &&
+        flowState !== 'PAYMENT_FAILED' && (
         <div
           role="status"
           aria-live="polite"
@@ -134,6 +161,8 @@ export function CheckoutAction({
             <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
             <span className="font-mono text-xs font-semibold text-foreground">
               {flowState === 'PREPARING_PAYMENT' && 'Preparing private payment conditions...'}
+              {flowState === 'CONNECTING_WALLET' && 'Connecting your Midnight wallet...'}
+              {flowState === 'AWAITING_WALLET_APPROVAL' && 'Approve the payment in your wallet...'}
               {flowState === 'SUBMITTING_PAYMENT' && 'Submitting payment to the VeilPay contract...'}
               {flowState === 'GENERATING_PROOF' && 'Generating zero-knowledge verification proof...'}
               {flowState === 'VERIFYING_PAYMENT' && 'Verifying payment against contract conditions...'}
@@ -173,8 +202,10 @@ export function CheckoutAction({
           </>
         ) : (
           <>
-            <Lock className="size-4" aria-hidden="true" />
-            <span>Pay with Midnight ZK Proof</span>
+            <Wallet className="size-4" aria-hidden="true" />
+            <span>
+              Pay {intent.conditions.amount.amount} {intent.conditions.amount.asset} with Wallet
+            </span>
           </>
         )}
       </button>

@@ -20,7 +20,9 @@ interface PayRequestBody {
   /** 32-byte payment secret from the checkout link fragment (hex encoded). */
   paymentSecret?: string
   network?: string
-}
+  /** Correlation reference of the wallet-broadcast transfer. */
+  txReference?: string
+  }
 
 interface DbIntentRow {
   auth_user_id?: string | null
@@ -122,6 +124,11 @@ export async function POST(
     // 2. The payment secret is the payer's credential — required, no wallet address.
     body = await request.json().catch(() => ({}))
     const paymentSecret = body.paymentSecret?.trim()
+    // Optional correlation reference from the wallet-broadcast transfer.
+    const txReference =
+      typeof body.txReference === 'string' && body.txReference.length <= 256
+        ? body.txReference
+        : undefined
 
     if (!isValidPaymentSecretHex(paymentSecret)) {
       return NextResponse.json(
@@ -161,12 +168,16 @@ export async function POST(
       )
     }
 
-    if (before.status === 'PAID' || before.status === 'REFUNDED') {
-      const now = new Date().toISOString()
-      await supabase
-        .from('payment_intents')
-        .update({ status: 'verified', updated_at: now })
-        .eq('id', id)
+  if (before.status === 'PAID' || before.status === 'REFUNDED') {
+  const now = new Date().toISOString()
+  await supabase
+  .from('payment_intents')
+  .update({
+    status: 'verified',
+    updated_at: now,
+    ...(txReference ? { on_chain_reference: txReference } : {}),
+  })
+  .eq('id', id)
 
       return NextResponse.json({
         success: true,
@@ -219,12 +230,16 @@ export async function POST(
       )
     }
 
-    // 7. Persist verified state and activity
-    const now = new Date().toISOString()
-    await supabase
-      .from('payment_intents')
-      .update({ status: 'verified', updated_at: now })
-      .eq('id', id)
+  // 7. Persist verified state and activity
+  const now = new Date().toISOString()
+  await supabase
+  .from('payment_intents')
+  .update({
+    status: 'verified',
+    updated_at: now,
+    ...(txReference ? { on_chain_reference: txReference } : {}),
+  })
+  .eq('id', id)
 
     if (dbIntent.auth_user_id) {
       await recordActivityEvent({
