@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { Session } from '@supabase/supabase-js'
-import { Wallet, ChevronDown, LogOut, LayoutDashboard, Loader2 } from 'lucide-react'
+import { ChevronDown, LogOut, LayoutDashboard, Loader2 } from 'lucide-react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { shortPublicKey } from '@/lib/wallet/oneam-auth'
 import { WalletConnectModal } from './wallet-connect-modal'
@@ -92,7 +93,7 @@ export function OneAmWalletButton({ className }: OneAmWalletButtonProps) {
             aria-haspopup="menu"
             className="inline-flex items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <Wallet className="size-4" />
+            <Image src="/wallets/1am.png" alt="" aria-hidden="true" width={16} height={16} className="size-4 rounded-full" />
             <span className="font-mono text-xs">{shortPublicKey(pubkey)}</span>
             <ChevronDown className={cn('size-3.5 transition-transform', menuOpen && 'rotate-180')} />
           </button>
@@ -143,7 +144,7 @@ export function OneAmWalletButton({ className }: OneAmWalletButtonProps) {
             className,
           )}
         >
-          <Wallet className="size-4" />
+          <Image src="/wallets/1am.png" alt="" aria-hidden="true" width={16} height={16} className="size-4 rounded-full" />
           <span>1AM Wallet</span>
         </button>
       )}

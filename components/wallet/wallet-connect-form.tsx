@@ -7,12 +7,11 @@ import {
   AlertCircle,
   Loader2,
   Wallet,
-  Moon,
-  Layers,
   Puzzle,
   Download,
   RefreshCw,
 } from 'lucide-react'
+import Image from 'next/image'
 import {
   detectInjectedWallets,
   enableWallet,
@@ -28,9 +27,14 @@ interface WalletConnectFormProps {
   onSuccess?: () => void
 }
 
+/** Official brand marks served from /public/wallets (fetched from lace.io and 1am.xyz). */
 function WalletIcon({ id, className }: { id: WalletProviderId; className?: string }) {
-  if (id === 'lace' || id === 'lace-midnight') return <Layers className={className} />
-  if (id === '1am') return <Moon className={className} />
+  if (id === 'lace' || id === 'lace-midnight') {
+    return <Image src="/wallets/lace.png" alt="" aria-hidden="true" width={32} height={32} className={`${className} rounded-sm`} />
+  }
+  if (id === '1am') {
+    return <Image src="/wallets/1am.png" alt="" aria-hidden="true" width={32} height={32} className={`${className} rounded-full`} />
+  }
   return <Puzzle className={className} />
 }
 
@@ -186,17 +190,17 @@ export function WalletConnectForm({
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium text-foreground hover:border-primary/50 hover:bg-primary/5 transition-colors"
               >
-                <Layers className="size-3.5 text-muted-foreground" />
+                <Image src="/wallets/lace.png" alt="" aria-hidden="true" width={14} height={14} className="size-3.5" />
                 Install Lace
                 <Download className="size-3 ml-auto text-muted-foreground" />
               </a>
               <a
-                href="https://midnight.network/"
+                href="https://1am.xyz/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium text-foreground hover:border-primary/50 hover:bg-primary/5 transition-colors"
               >
-                <Moon className="size-3.5 text-muted-foreground" />
+                <Image src="/wallets/1am.png" alt="" aria-hidden="true" width={14} height={14} className="size-3.5 rounded-full" />
                 Get 1AM Wallet
                 <Download className="size-3 ml-auto text-muted-foreground" />
               </a>
