@@ -153,7 +153,7 @@ export function VerificationCard({ intent }: VerificationCardProps) {
         <div className="rounded-xl border border-warning/30 bg-warning/20 p-4 space-y-3 text-warning">
           <div className="flex items-center gap-2">
             <AlertTriangle className="size-4 text-warning" />
-            <span className="text-xs font-semibold">Payment Intent Expired</span>
+            <span className="text-xs font-semibold">Invoice Expired</span>
           </div>
           <p className="text-xs text-warning/90 leading-relaxed">
             This intent is no longer accepting payments. The configured deadline has elapsed and protocol nodes will reject subsequent settlement proofs.
@@ -164,7 +164,7 @@ export function VerificationCard({ intent }: VerificationCardProps) {
               className="inline-flex items-center gap-1.5 rounded-lg border border-warning/40 bg-warning/10 px-3 py-1.5 text-xs font-medium text-warning hover:bg-warning/20 transition-colors"
             >
               <PlusCircle className="size-3.5" />
-              Create New Payment Intent
+              Create New Invoice
             </Link>
           </div>
         </div>
@@ -175,10 +175,10 @@ export function VerificationCard({ intent }: VerificationCardProps) {
         <div className="rounded-xl border border-border/80 bg-muted/30 p-4 space-y-2 text-muted-foreground">
           <div className="flex items-center gap-2 text-foreground">
             <Ban className="size-4 text-destructive" />
-            <span className="text-xs font-semibold">Payment Intent Cancelled</span>
+            <span className="text-xs font-semibold">Invoice Cancelled</span>
           </div>
           <p className="text-xs leading-relaxed">
-            This payment intent was cancelled by the merchant before completion. Customers can no longer submit payments against this identifier.
+            This invoice was cancelled by the merchant before completion. Customers can no longer submit payments against this identifier.
           </p>
         </div>
       )}

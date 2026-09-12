@@ -22,7 +22,7 @@ export function MerchantSection() {
           </Reveal>
           <Reveal delay={80}>
             <p className="mt-5 text-pretty leading-relaxed text-muted-foreground">
-              Create a payment intent, share it with your customer, and receive a verified
+              Create a invoice, share it with your customer, and receive a verified
               status you can reconcile against your own order reference — without handling the
               customer&apos;s broader financial data.
             </p>

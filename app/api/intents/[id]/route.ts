@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 import type { PaymentIntent, PaymentIntentStatus } from '@/lib/payments/types'
 import { isValidIntentId } from '@/lib/payments/intent'
 import {
-  getVeilPayAPI,
   getVeilPayReadiness,
   getChainIntent,
   mapChainStatusToAppStatus,
@@ -86,8 +85,7 @@ export async function GET(
       // local status from the on-chain state when the protocol stack is ready.
       if (meta.chainIntentId && getVeilPayReadiness().ready) {
         try {
-          const api = await getVeilPayAPI()
-          const chainIntent = await getChainIntent(api, meta.chainIntentId)
+          const chainIntent = await getChainIntent(meta.chainIntentId)
           if (chainIntent) {
             const chainStatus = mapChainStatusToAppStatus(chainIntent.status) as PaymentIntentStatus
             if (chainStatus !== status) {

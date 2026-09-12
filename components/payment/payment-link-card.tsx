@@ -113,7 +113,7 @@ export function PaymentLinkCard({
         <div className="rounded-xl border border-warning/30 bg-warning/20 p-3 flex items-center gap-2 text-xs text-warning">
           <AlertCircle className="size-4 shrink-0 text-warning" />
           <span>
-            This payment intent is inactive ({statusDisplay[status] || status}). Checkout will reject submissions.
+            This invoice is inactive ({statusDisplay[status] || status}). Checkout will reject submissions.
           </span>
         </div>
       )}

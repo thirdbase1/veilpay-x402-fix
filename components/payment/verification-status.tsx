@@ -62,14 +62,14 @@ export function VerificationStatusFlow({ status }: VerificationStatusFlowProps) 
       {status === 'cancelled' && (
         <div className="rounded-xl border border-border/80 bg-muted/30 p-3.5 flex items-center gap-3 text-xs text-muted-foreground">
           <Ban className="size-4 shrink-0 text-muted-foreground" />
-          <p>This payment intent was cancelled by the merchant before completion.</p>
+          <p>This invoice was cancelled by the merchant before completion.</p>
         </div>
       )}
 
       {status === 'expired' && (
         <div className="rounded-xl border border-border/60 bg-muted/40 p-3.5 flex items-center gap-3 text-xs text-muted-foreground">
           <AlertTriangle className="size-4 shrink-0 text-muted-foreground" />
-          <p>This payment intent expired before satisfaction. Late customer payments will be rejected.</p>
+          <p>This invoice expired before satisfaction. Late customer payments will be rejected.</p>
         </div>
       )}
 

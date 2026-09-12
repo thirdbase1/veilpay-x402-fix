@@ -59,7 +59,7 @@ export function PaymentIntentHeader({
           href="/app/intents"
           className="hover:text-foreground transition-colors shrink-0"
         >
-          Payment Intents
+          Invoices
         </Link>
         <ChevronRight className="size-3 text-muted-foreground/50 shrink-0" />
         <span
@@ -85,7 +85,7 @@ export function PaymentIntentHeader({
 
           <div className="flex flex-wrap items-center gap-2.5">
             <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-              Payment Intent
+              Invoice
             </h1>
             <PaymentIntentStatusBadge status={intent.status} />
           </div>
@@ -99,7 +99,7 @@ export function PaymentIntentHeader({
             <button
               type="button"
               onClick={handleCopyId}
-              aria-label={copiedId ? 'Copied ID' : 'Copy payment intent ID'}
+              aria-label={copiedId ? 'Copied ID' : 'Copy invoice ID'}
               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
             >
               {copiedId ? (

@@ -18,7 +18,7 @@ export function FinalCta() {
         </Reveal>
         <Reveal delay={80}>
           <p className="mx-auto mt-5 max-w-2xl text-pretty leading-relaxed text-muted-foreground">
-            Create a payment intent, let the customer pay, and verify only what needs to be
+            Create a invoice, let the customer pay, and verify only what needs to be
             known.
           </p>
         </Reveal>

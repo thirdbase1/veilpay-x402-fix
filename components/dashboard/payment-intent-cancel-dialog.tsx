@@ -32,7 +32,7 @@ export function PaymentIntentCancelDialog({
       onSuccess(updated)
       onClose()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to cancel payment intent'
+      const msg = err instanceof Error ? err.message : 'Failed to cancel invoice'
       setError(msg)
     } finally {
       setIsSubmitting(false)
@@ -58,7 +58,7 @@ export function PaymentIntentCancelDialog({
             </div>
             <div>
               <h3 id="cancel-dialog-title" className="text-sm font-semibold text-foreground">
-                Cancel Payment Intent
+                Cancel Invoice
               </h3>
               <p className="font-mono text-xs text-muted-foreground truncate max-w-[240px]">
                 {intent.id}
@@ -82,7 +82,7 @@ export function PaymentIntentCancelDialog({
           <div className="space-y-1">
             <p className="font-medium text-warning">Irreversible Action</p>
             <p className="text-warning/90 leading-relaxed text-[11px]">
-              Cancelling will immediately invalidate this payment intent. Any customer attempting to pay via the checkout link will see a cancelled status and cannot proceed.
+              Cancelling will immediately invalidate this invoice. Any customer attempting to pay via the checkout link will see a cancelled status and cannot proceed.
             </p>
           </div>
         </div>

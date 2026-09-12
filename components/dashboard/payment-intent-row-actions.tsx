@@ -87,7 +87,7 @@ export function PaymentIntentRowActions({
         <button
           type="button"
           onClick={() => onCancelClick(intent)}
-          title="Cancel this payment intent"
+          title="Cancel this invoice"
           aria-label="Cancel intent"
           className="inline-flex size-7 items-center justify-center rounded-md border border-destructive/30 bg-destructive/20 text-destructive hover:bg-destructive/40 hover:text-destructive transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive"
         >

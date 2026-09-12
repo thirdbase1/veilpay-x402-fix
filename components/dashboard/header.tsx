@@ -18,7 +18,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({
   title,
-  description = 'Create and monitor privacy-preserving payment intents.',
+  description = 'Create and monitor privacy-preserving invoices.',
   action = { href: '/app/create', label: 'Create Payment' },
   onOpenMobileMenu,
 }: DashboardHeaderProps) {

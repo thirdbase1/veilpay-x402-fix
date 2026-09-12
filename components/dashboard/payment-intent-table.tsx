@@ -57,7 +57,7 @@ export function PaymentIntentTable({
           <div className="flex size-10 items-center justify-center rounded-xl border border-border bg-muted/40 text-muted-foreground">
             <FilterX className="size-5" />
           </div>
-          <p className="text-sm font-semibold text-foreground">No payment intents match your criteria</p>
+          <p className="text-sm font-semibold text-foreground">No invoices match your criteria</p>
           <p className="text-xs text-muted-foreground max-w-sm">
             Try adjusting your search query, status filters, or sorting preferences.
           </p>

@@ -14,7 +14,7 @@ export function IntentNotFound({ id, error }: IntentNotFoundProps) {
         className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="size-3.5" />
-        Back to Payment Intents
+        Back to Invoices
       </Link>
 
       <div
@@ -23,10 +23,10 @@ export function IntentNotFound({ id, error }: IntentNotFoundProps) {
       >
         <div className="flex items-center gap-2.5 text-base font-semibold text-destructive">
           <AlertTriangle className="size-5 text-destructive" />
-          <span>Payment Intent Not Found</span>
+          <span>Invoice Not Found</span>
         </div>
         <p className="text-xs text-destructive/90 leading-relaxed">
-          {error || "We couldn't find a payment intent with this identifier."}
+          {error || "We couldn't find a invoice with this identifier."}
         </p>
         <p className="font-mono text-xs text-destructive/70 break-all select-all">
           Requested ID: {id}
@@ -36,7 +36,7 @@ export function IntentNotFound({ id, error }: IntentNotFoundProps) {
             href="/app/intents"
             className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3.5 py-2 text-xs font-medium text-foreground hover:bg-secondary transition-colors"
           >
-            Back to Payment Intents
+            Back to Invoices
           </Link>
         </div>
       </div>

@@ -141,10 +141,10 @@ export function CheckoutAction({
         if (response.intent) onPaymentSuccess(response.intent)
       } else if (response.code === 'INTENT_EXPIRED') {
         setFlowState('EXPIRED')
-        setErrorMessage(response.error || 'This payment intent has expired.')
+        setErrorMessage(response.error || 'This invoice has expired.')
       } else if (response.code === 'INTENT_CANCELLED') {
         setFlowState('CANCELLED')
-        setErrorMessage(response.error || 'This payment intent was cancelled by the merchant.')
+        setErrorMessage(response.error || 'This invoice was cancelled by the merchant.')
       } else {
         setFlowState('PAYMENT_FAILED')
         setErrorMessage(response.message || response.error || 'Payment execution failed on protocol layer.')
@@ -175,7 +175,7 @@ export function CheckoutAction({
         </h3>
         <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
           Your payment was verified successfully by the protocol. The merchant received the
-          cryptographic confirmation required by this payment intent.
+          cryptographic confirmation required by this invoice.
         </p>
       </div>
     )

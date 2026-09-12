@@ -73,7 +73,7 @@ export function CheckoutCard({ intent }: CheckoutCardProps) {
           <button
             type="button"
             onClick={() => copyToClipboard(intent.id, setCopiedId)}
-            aria-label={copiedId ? 'Copied ID' : 'Copy payment intent ID'}
+            aria-label={copiedId ? 'Copied ID' : 'Copy invoice ID'}
             className="text-muted-foreground hover:text-foreground transition-colors p-1"
           >
             {copiedId ? (

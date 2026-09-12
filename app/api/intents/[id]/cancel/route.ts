@@ -8,8 +8,8 @@ import type { PaymentIntent, PaymentIntentStatus } from '@/lib/payments/types'
 import { recordActivityEvent } from '@/lib/payments/activity'
 import { isValidIntentId } from '@/lib/payments/intent'
 import {
-  getVeilPayAPI,
   getVeilPayReadiness,
+  getChainIntent,
   VeilPayUnavailableError,
 } from '@/lib/veilpay-server'
 
@@ -92,7 +92,9 @@ export async function POST(
       )
     }
 
-    // Chain-backed intents must also be cancelled on the VeilPay contract.
+    // Chain-backed invoices are cancelled by the merchant's wallet (the
+    // extension signs the cancel tx — the server never holds keys). This
+    // endpoint verifies the on-chain result and persists it.
     const meta = (dbIntent.metadata ?? {}) as { chainIntentId?: string }
     if (meta.chainIntentId) {
       const readiness = getVeilPayReadiness()
@@ -106,8 +108,29 @@ export async function POST(
         )
       }
       try {
-        const api = await getVeilPayAPI()
-        await api.cancel(BigInt(meta.chainIntentId))
+        const chain = await getChainIntent(meta.chainIntentId)
+        if (!chain) {
+          return NextResponse.json(
+            { error: 'Invoice not found in the VeilPay contract ledger.' },
+            { status: 404 },
+          )
+        }
+        if (chain.status === 'ACTIVE') {
+          return NextResponse.json(
+            {
+              error:
+                'The invoice is still open on-chain. Cancel it from your wallet first, then confirm here.',
+              code: 'CHAIN_CANCEL_REQUIRED',
+            },
+            { status: 409 },
+          )
+        }
+        if (chain.status === 'PAID' || chain.status === 'REFUNDED') {
+          return NextResponse.json(
+            { error: 'Cannot cancel an already settled invoice.' },
+            { status: 409 },
+          )
+        }
       } catch (chainErr) {
         if (chainErr instanceof VeilPayUnavailableError) {
           return NextResponse.json(
@@ -115,9 +138,9 @@ export async function POST(
             { status: 503 },
           )
         }
-        console.error('[VeilPay] On-chain cancel failed:', chainErr)
+        console.error('[VeilPay] Chain cancel verification failed:', chainErr)
         return NextResponse.json(
-          { error: 'On-chain cancellation failed. The intent was not cancelled.' },
+          { error: 'On-chain cancellation could not be verified.' },
           { status: 502 },
         )
       }

@@ -9,11 +9,9 @@ import {
   parseDecimalToMicroUnits,
 } from '@/lib/payments/intent'
 import {
-  getVeilPayAPI,
   getVeilPayReadiness,
+  getChainIntent,
   getLedgerSequence,
-  generatePaymentSecret,
-  secretToBytes,
   VeilPayUnavailableError,
 } from '@/lib/veilpay-server'
 import { midnightPublicConfig } from '@/lib/config'
@@ -193,6 +191,15 @@ export async function GET(request: Request) {
   }
 }
 
+/**
+ * Register an invoice that the merchant already issued client-side.
+ *
+ * Per docs/MIGRATION-V2-INVOICE.md, tx signing happens in the merchant's
+ * browser wallet (Lace/1AM extension) — the server never holds keys and never
+ * submits transactions. This endpoint verifies the claimed on-chain invoice
+ * against the live public ledger before persisting its metadata, so a client
+ * cannot register an invoice that does not exist on-chain.
+ */
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
@@ -273,7 +280,22 @@ export async function POST(request: Request) {
       }
     }
 
-    // Real on-chain intent creation through the VeilPay contract.
+    // The client must supply the on-chain issuance result from its wallet tx.
+    const chainIntentId = typeof body.chainIntentId === 'string' ? body.chainIntentId : ''
+    const paymentSecret = typeof body.paymentSecret === 'string' ? body.paymentSecret : ''
+    const merchantCoinPk = typeof body.merchantCoinPk === 'string' ? body.merchantCoinPk : ''
+    const tokenColor = typeof body.tokenColor === 'string' ? body.tokenColor : ''
+    const expiresAtOps = typeof body.expiresAtOps === 'string' ? body.expiresAtOps : ''
+
+    if (!/^\d+$/.test(chainIntentId) || !/^[0-9a-fA-F]{64}$/.test(paymentSecret)) {
+      return NextResponse.json(
+        { error: 'chainIntentId (numeric) and paymentSecret (32-byte hex) are required from the client-side issuance.' },
+        { status: 400 },
+      )
+    }
+
+    // Verify the claimed invoice against the live public ledger before
+    // persisting anything. The server trusts the chain, not the client.
     const readiness = getVeilPayReadiness()
     if (!readiness.ready) {
       return NextResponse.json(
@@ -285,6 +307,14 @@ export async function POST(request: Request) {
       )
     }
 
+    const chain = await getChainIntent(chainIntentId)
+    if (!chain) {
+      return NextResponse.json(
+        { error: `Invoice #${chainIntentId} not found on the VeilPay contract. Issue it from your wallet first.` },
+        { status: 409 },
+      )
+    }
+
     const amountMicro = parseDecimalToMicroUnits(conditions.amount.amount)
     if (amountMicro === null || amountMicro <= BigInt(0)) {
       return NextResponse.json(
@@ -293,22 +323,33 @@ export async function POST(request: Request) {
       )
     }
 
-    // TTL is expressed in ledger operations (contract semantics), not wall-clock.
-    const rawTtl = typeof body.ttlOps === 'number' ? body.ttlOps : 50
-    const ttlOps = Math.min(1000, Math.max(10, Math.floor(rawTtl)))
+    if (chain.status !== 'ACTIVE') {
+      return NextResponse.json(
+        { error: `On-chain invoice #${chainIntentId} is ${chain.status}, not ACTIVE.` },
+        { status: 409 },
+      )
+    }
 
-    const api = await getVeilPayAPI()
-    const sequence = await getLedgerSequence(api)
-    const expiresAtOps = sequence + ttlOps
-    const paymentSecret = generatePaymentSecret()
+    if (BigInt(chain.amount) !== amountMicro) {
+      return NextResponse.json(
+        { error: `On-chain amount (${chain.amount}) does not match the requested amount (${amountMicro}).` },
+        { status: 409 },
+      )
+    }
 
-    const chainIntentId = await api.createIntent(
-      amountMicro,
-      BigInt(expiresAtOps),
-      new Uint8Array(32), // open intent: accept any shielded token color
-      api.merchantCoinPk,
-      secretToBytes(paymentSecret),
-    )
+    if (merchantCoinPk && chain.merchantCoinPk.toLowerCase() !== merchantCoinPk.toLowerCase()) {
+      return NextResponse.json(
+        { error: 'On-chain merchantCoinPk does not match the reported settlement key.' },
+        { status: 409 },
+      )
+    }
+
+    if (expiresAtOps && BigInt(chain.expiresAtOps) !== BigInt(expiresAtOps)) {
+      return NextResponse.json(
+        { error: 'On-chain expiry does not match the reported expiry.' },
+        { status: 409 },
+      )
+    }
 
     // Assemble the authoritative typed intent
     const intentId = idempotencyKey && isValidIntentId(idempotencyKey) ? idempotencyKey : undefined
@@ -317,10 +358,10 @@ export async function POST(request: Request) {
       network: midnightPublicConfig.network || 'midnight-preprod',
     })
     draft.status = 'awaiting_payment'
-    draft.chainIntentId = chainIntentId.toString()
+    draft.chainIntentId = chainIntentId
     draft.paymentSecret = paymentSecret
-    draft.expiresAtOps = expiresAtOps.toString()
-    draft.onChainReference = `veilpay:${readiness.contractAddress}:${chainIntentId.toString()}`
+    draft.expiresAtOps = chain.expiresAtOps
+    draft.onChainReference = `veilpay:${readiness.contractAddress}:${chainIntentId}`
 
     // Fetch the merchant profile owned by user
     const { data: profile } = await supabase
@@ -344,10 +385,11 @@ export async function POST(request: Request) {
       expires_at: draft.conditions.expiresAt ?? null,
       reference: draft.conditions.reference ?? null,
       metadata: {
-        chainIntentId: draft.chainIntentId,
+        chainIntentId,
         paymentSecret,
-        ttlOps,
-        expiresAtOps: draft.expiresAtOps,
+        tokenColor: tokenColor || chain.tokenColor,
+        merchantCoinPk: merchantCoinPk || chain.merchantCoinPk,
+        expiresAtOps: chain.expiresAtOps,
       },
       created_at: draft.createdAt,
       updated_at: draft.updatedAt ?? draft.createdAt,
@@ -369,14 +411,14 @@ export async function POST(request: Request) {
       merchantId: profile?.id ?? null,
       intentId: draft.id,
       eventType: 'PAYMENT_INTENT_CREATED',
-      title: 'Payment Intent Created',
-      description: `Created on-chain payment intent #${draft.chainIntentId} for ${draft.conditions.amount.amount} ${draft.conditions.amount.asset}`,
+      title: 'Invoice Issued',
+      description: `Issued on-chain invoice #${chainIntentId} for ${draft.conditions.amount.amount} ${draft.conditions.amount.asset}`,
       metadata: {
         amount: draft.conditions.amount.amount,
         asset: draft.conditions.amount.asset,
         recipient: draft.conditions.recipient,
         reference: draft.conditions.reference || null,
-        chainIntentId: draft.chainIntentId,
+        chainIntentId,
       },
     })
 
@@ -384,11 +426,8 @@ export async function POST(request: Request) {
       {
         intent: draft,
         midnightStatus: 'published',
-        chainIntentId: draft.chainIntentId,
-        // The secret is returned exactly once so the merchant can embed it in
-        // the checkout link; it is also persisted in the intent metadata.
-        paymentSecret,
-        note: 'Intent registered on the VeilPay contract via the authenticated gateway.',
+        chainIntentId,
+        note: 'Invoice verified against the public ledger and registered.',
       },
       { status: 201 },
     )
@@ -399,7 +438,7 @@ export async function POST(request: Request) {
         { status: 503 },
       )
     }
-    const message = err instanceof Error ? err.message : 'Failed to create intent'
+    const message = err instanceof Error ? err.message : 'Failed to register invoice'
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

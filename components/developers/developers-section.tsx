@@ -41,7 +41,7 @@ export function DevelopersSection() {
               className="sm:flex-col sm:items-stretch"
               steps={[
                 { label: 'Merchant Application', tone: 'neutral' },
-                { label: 'VeilPay Payment Intent', tone: 'primary' },
+                { label: 'VeilPay Invoice', tone: 'primary' },
                 { label: 'Midnight', tone: 'primary' },
                 { label: 'Verification', tone: 'accent' },
               ]}

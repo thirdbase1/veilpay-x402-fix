@@ -19,7 +19,7 @@ const steps = [
     num: '03',
     icon: ScanLine,
     title: 'VeilPay Verifies Cryptographically',
-    body: 'The protocol uses cryptographic (zero-knowledge) verification to check that the payment satisfies the payment intent.',
+    body: 'The protocol uses cryptographic (zero-knowledge) verification to check that the payment satisfies the invoice.',
   },
   {
     num: '04',
@@ -34,7 +34,7 @@ export function HowItWorks() {
     <Section id="how-it-works">
       <Reveal>
         <SectionEyebrow>How It Works</SectionEyebrow>
-        <SectionHeading>From payment intent to verified payment.</SectionHeading>
+        <SectionHeading>From invoice to verified payment.</SectionHeading>
       </Reveal>
 
       <ol className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2">

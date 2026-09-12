@@ -21,10 +21,10 @@ export function CheckoutNotFound({ intentId }: { intentId: string }) {
 
         <div className="space-y-1">
           <h2 className="text-base font-semibold text-foreground">
-            Payment Intent Not Found
+            Invoice Not Found
           </h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            The requested payment intent ID{' '}
+            The requested invoice ID{' '}
             <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground font-medium">
               {intentId}
             </code>{' '}
@@ -62,7 +62,7 @@ export function CheckoutExpired({ intent }: { intent: PaymentIntent }) {
           Payment Request Expired
         </h2>
         <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
-          The deadline for satisfying this payment intent elapsed on{' '}
+          The deadline for satisfying this invoice elapsed on{' '}
           <span className="font-mono text-foreground">
             {intent.conditions.expiresAt
               ? new Date(intent.conditions.expiresAt).toLocaleString()
@@ -95,10 +95,10 @@ export function CheckoutCancelled({ intent }: { intent: PaymentIntent }) {
 
       <div className="space-y-1">
         <h2 className="text-base font-semibold text-foreground">
-          Payment Intent Cancelled
+          Invoice Cancelled
         </h2>
         <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
-          This payment intent was cancelled by the merchant prior to fulfillment.
+          This invoice was cancelled by the merchant prior to fulfillment.
         </p>
       </div>
 

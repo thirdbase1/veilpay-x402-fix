@@ -24,7 +24,7 @@ export function DashboardSidebar({ onNavigate }: SidebarProps) {
 
   const mainNav = [
     { href: '/app', label: 'Overview', icon: LayoutDashboard },
-    { href: '/app/intents', label: 'Payment Intents', icon: ReceiptText },
+    { href: '/app/intents', label: 'Invoices', icon: ReceiptText },
     { href: '/app/activity', label: 'Activity', icon: ActivityIcon },
     { href: '/app/create', label: 'Create Payment', icon: PlusCircle },
   ]

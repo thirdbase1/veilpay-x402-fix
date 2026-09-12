@@ -9,11 +9,11 @@ export function EmptyState() {
       </div>
 
       <h3 className="mt-4 text-sm font-semibold text-foreground">
-        No payment intents yet
+        No invoices yet
       </h3>
 
       <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-muted-foreground">
-        Create your first payment intent to start accepting privately verifiable payments.
+        Create your first invoice to start accepting privately verifiable payments.
       </p>
 
       <Link

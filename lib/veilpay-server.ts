@@ -146,24 +146,14 @@ declare global {
 async function getLedgerProvider() {
   if (!globalThis.__veilpay_ledger_provider__) {
     globalThis.__veilpay_ledger_provider__ = (async () => {
-      const vendorModules = join(VENDOR_ROOT, 'node_modules')
-      const { setNetworkId } = (await dynamicImport(
-        pathToFileURL(join(vendorModules, '@midnight-ntwrk', 'midnight-js-network-id')).href,
-      )) as { setNetworkId(id: string): void }
-      setNetworkId('preprod')
-
-      const { indexerPublicDataProvider } = (await dynamicImport(
-        pathToFileURL(
-          join(vendorModules, '@midnight-ntwrk', 'midnight-js-indexer-public-data-provider'),
-        ).href,
-      )) as {
-        indexerPublicDataProvider: (
-          indexerUri: string,
-          indexerWsUri: string,
-        ) => { queryContractState(address: string): Promise<{ data: unknown } | null> }
+      const bootstrapUrl = pathToFileURL(join(VENDOR_ROOT, 'public-bootstrap.mjs')).href
+      const { createPublicLedgerProvider } = (await dynamicImport(bootstrapUrl)) as {
+        createPublicLedgerProvider(
+          indexerHttp: string,
+          indexerWs: string,
+        ): Promise<{ queryContractState(address: string): Promise<{ data: unknown } | null> }>
       }
-
-      return indexerPublicDataProvider(VEILPAY_INDEXER_HTTP, VEILPAY_INDEXER_WS)
+      return createPublicLedgerProvider(VEILPAY_INDEXER_HTTP, VEILPAY_INDEXER_WS)
     })().catch((err) => {
       // Do not cache failures: a transient indexer outage should retry.
       globalThis.__veilpay_ledger_provider__ = undefined

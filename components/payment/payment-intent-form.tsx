@@ -105,10 +105,10 @@ export function PaymentIntentForm() {
 
     try {
       const res = await createPaymentIntentApi(conditions, walletId)
-      // Navigate to the newly created payment intent route
+      // Navigate to the newly created invoice route
       router.push(`/app/intents/${encodeURIComponent(res.intent.id)}`)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to register payment intent'
+      const msg = err instanceof Error ? err.message : 'Failed to register invoice'
       setSubmitError(msg)
       setIsSubmitting(false)
     }
@@ -400,7 +400,7 @@ export function PaymentIntentForm() {
             ) : (
               <>
                 <CheckCircle2 className="size-3.5" />
-                Create Payment Intent
+                Create Invoice
               </>
             )}
           </button>

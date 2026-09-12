@@ -6,6 +6,14 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // isomorphic-ws (pulled in by the indexer public-data provider) conditionally
+  // requires the node-only 'ws' package; keep it out of the SSR bundle.
+  serverExternalPackages: ['isomorphic-ws', 'ws'],
+  turbopack: {
+    resolveAlias: {
+      'isomorphic-ws': './lib/shims/isomorphic-ws.ts',
+    },
+  },
   // The VeilPay protocol workspaces (vendor/veilpay) are loaded at runtime via
   // a dynamic import that bypasses the bundler, so they must be traced into
   // the server output for production deployments.
