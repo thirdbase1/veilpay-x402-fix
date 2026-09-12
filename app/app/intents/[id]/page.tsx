@@ -184,6 +184,7 @@ export default function PaymentIntentDetailPage({ params }: PageProps) {
               intentId={intent.id}
               status={intent.status}
               reference={intent.conditions.reference}
+              paymentSecret={intent.paymentSecret}
             />
           </div>
         </div>

@@ -83,6 +83,42 @@ export async function POST(
       )
     }
 
+    // 1b. Reject intents that are no longer payable in the registry —
+    // cancelled, or past their expiration deadline.
+    if (dbIntent.status === 'cancelled') {
+      return NextResponse.json(
+        {
+          success: false,
+          status: 'cancelled',
+          code: 'INTENT_CANCELLED',
+          error: 'This payment intent was cancelled by the merchant.',
+        },
+        { status: 409 },
+      )
+    }
+
+    const isExpired =
+      dbIntent.status === 'expired' ||
+      (typeof dbIntent.expires_at === 'string' &&
+        new Date(dbIntent.expires_at).getTime() <= Date.now())
+    if (isExpired) {
+      if (dbIntent.status !== 'expired') {
+        await supabase
+          .from('payment_intents')
+          .update({ status: 'expired', updated_at: new Date().toISOString() })
+          .eq('id', id)
+      }
+      return NextResponse.json(
+        {
+          success: false,
+          status: 'expired',
+          code: 'INTENT_EXPIRED',
+          error: 'This payment intent has expired and can no longer be paid.',
+        },
+        { status: 410 },
+      )
+    }
+
     // 2. The payment secret is the payer's credential — required, no wallet address.
     body = await request.json().catch(() => ({}))
     const paymentSecret = body.paymentSecret?.trim()

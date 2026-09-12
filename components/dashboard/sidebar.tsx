@@ -32,7 +32,7 @@ export function DashboardSidebar({ onNavigate }: SidebarProps) {
   ]
 
   const secondaryNav = [
-    { href: '/docs', label: 'Documentation', icon: FileCode2 },
+    { href: '/explorer', label: 'Public Explorer', icon: FileCode2 },
     { href: '/app/settings', label: 'Settings', icon: Settings },
   ]
 

@@ -11,7 +11,7 @@ const productLinks = [
 ]
 
 const resourceLinks = [
-  { label: 'Documentation', href: routes.docs },
+  { label: 'Public Explorer', href: routes.explorer },
   { label: 'Launch App', href: routes.app },
 ]
 

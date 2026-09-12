@@ -15,7 +15,6 @@ export const primaryNav: NavLink[] = [
 ]
 
 export const utilityNav = {
-  docs: { label: 'Documentation', href: routes.docs },
-  sdk: { label: 'SDK Explorer', href: routes.sdk },
+  explorer: { label: 'Explorer', href: routes.explorer },
   app: { label: 'Launch App', href: routes.app },
 } as const

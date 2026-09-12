@@ -23,10 +23,10 @@ export function DevelopersSection() {
           </Reveal>
           <Reveal delay={140}>
             <Link
-              href={routes.docs}
+              href={routes.explorer}
               className="mt-8 inline-flex items-center gap-2 rounded-md border border-border bg-card/40 px-5 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              Read the documentation
+              View the public explorer
               <ArrowRight className="size-4" />
             </Link>
           </Reveal>

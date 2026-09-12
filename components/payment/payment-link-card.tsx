@@ -15,11 +15,14 @@ import type { PaymentIntentStatus } from '@/lib/payments/types'
 
 interface PaymentLinkCardProps {
   intentId: string
-  status: PaymentIntentStatus
+  status: string
   reference?: string
+  /** One-time payment secret — embedded in the URL fragment so the scanned
+   * checkout can actually settle the intent. Never sent to the server. */
+  paymentSecret?: string
 }
 
-const statusDisplay: Record<PaymentIntentStatus, string> = {
+const statusDisplay: Record<string, string> = {
   draft: 'Draft',
   awaiting_payment: 'Awaiting Payment',
   verifying: 'Verifying',
@@ -34,6 +37,7 @@ export function PaymentLinkCard({
   intentId,
   status,
   reference,
+  paymentSecret,
 }: PaymentLinkCardProps) {
   const [copied, setCopied] = useState(false)
   const [showQR, setShowQR] = useState(true)
@@ -42,6 +46,7 @@ export function PaymentLinkCard({
 
   const isInactive = ['expired', 'cancelled', 'failed'].includes(status)
   const paymentPath = `/pay/${intentId}`
+  const secretFragment = paymentSecret ? `#ps=${encodeURIComponent(paymentSecret)}` : ''
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -52,7 +57,7 @@ export function PaymentLinkCard({
     }
   }, [])
 
-  const fullUrl = origin ? `${origin}${paymentPath}` : paymentPath
+  const fullUrl = origin ? `${origin}${paymentPath}${secretFragment}` : `${paymentPath}${secretFragment}`
 
   const handleCopy = async () => {
     if (!navigator.clipboard) return

@@ -223,10 +223,10 @@ export function CheckoutAction({
           <div className="pt-1 flex items-center justify-between text-[11px] text-muted-foreground">
             <span>VeilPay never fakes proof execution.</span>
             <a
-              href="/docs"
+              href="/explorer"
               className="inline-flex items-center gap-1 text-primary hover:underline font-mono"
             >
-              <span>Protocol Specs</span>
+              <span>Public Explorer</span>
               <ExternalLink className="size-3" aria-hidden="true" />
             </a>
           </div>

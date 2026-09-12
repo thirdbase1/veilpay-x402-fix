@@ -62,17 +62,10 @@ export function SiteNav() {
 
         <div className="hidden items-center gap-2 md:flex">
           <Link
-            href={utilityNav.docs.href}
+            href={utilityNav.explorer.href}
             className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {utilityNav.docs.label}
-          </Link>
-
-          <Link
-            href={utilityNav.sdk.href}
-            className="rounded-md px-3 py-2 text-sm text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {utilityNav.sdk.label}
+            {utilityNav.explorer.label}
           </Link>
 
           <OneAmWalletButton />
@@ -110,18 +103,11 @@ export function SiteNav() {
           </ul>
           <div className="mt-4 flex flex-col gap-2">
             <Link
-              href={utilityNav.docs.href}
+              href={utilityNav.explorer.href}
               onClick={() => setOpen(false)}
               className="inline-flex items-center justify-center rounded-md border border-border px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              {utilityNav.docs.label}
-            </Link>
-            <Link
-              href={utilityNav.sdk.href}
-              onClick={() => setOpen(false)}
-              className="inline-flex items-center justify-center rounded-md border border-primary/30 bg-primary/10 px-4 py-3 text-sm font-medium text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {utilityNav.sdk.label}
+              {utilityNav.explorer.label}
             </Link>
             <OneAmWalletButton className="w-full justify-center" />
           </div>

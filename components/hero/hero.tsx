@@ -51,7 +51,7 @@ export function Hero() {
                 <ArrowRight className="size-4" />
               </Link>
               <Link
-                href={routes.docs}
+                href={routes.explorer}
                 className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-card/40 px-5 py-3 text-sm font-medium text-foreground backdrop-blur-sm transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <BookOpen className="size-4" />

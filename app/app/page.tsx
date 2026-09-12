@@ -55,6 +55,25 @@ export default function MerchantOverviewPage() {
     loadData()
   }, [loadData])
 
+  // Real-time: silent refresh every 5s while the tab is visible so metrics
+  // and the recent-intents table track live payment state.
+  useEffect(() => {
+    const id = setInterval(async () => {
+      if (document.visibilityState !== 'visible') return
+      try {
+        const [fetchedIntents, fetchedMetrics] = await Promise.all([
+          fetchPaymentIntents({ pageSize: 15 }),
+          fetchDashboardMetrics(),
+        ])
+        setIntents(fetchedIntents)
+        setMetrics(fetchedMetrics)
+      } catch {
+        // Keep the last good data on transient failures.
+      }
+    }, 5000)
+    return () => clearInterval(id)
+  }, [])
+
   const handleIntentUpdated = (updated: PaymentIntent) => {
     setIntents((prev) =>
       prev.map((item) => (item.id === updated.id ? updated : item)),

@@ -97,6 +97,31 @@ export default function PaymentIntentsListPage() {
     loadData()
   }, [loadData])
 
+  // Real-time: silent refresh every 5s while the tab is visible so payment
+  // status changes (paid, expired, cancelled) appear without a manual reload.
+  useEffect(() => {
+    const id = setInterval(async () => {
+      if (document.visibilityState !== 'visible') return
+      try {
+        const result = await listPaymentIntents({
+          search: debouncedSearch,
+          status: statusFilter,
+          sort: sortBy as any,
+          page,
+          pageSize,
+        })
+        startTransition(() => {
+          setIntents(result.intents)
+          setTotalCount(result.total)
+          setTotalPages(result.totalPages)
+        })
+      } catch {
+        // Keep the last good data on transient failures.
+      }
+    }, 5000)
+    return () => clearInterval(id)
+  }, [debouncedSearch, statusFilter, sortBy, page, pageSize])
+
   const handleResetFilters = () => {
     setSearch('')
     setDebouncedSearch('')

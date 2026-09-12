@@ -171,6 +171,15 @@ export default function MerchantActivityPage() {
     fetchActivities()
   }, [fetchActivities])
 
+  // Real-time: silent refresh every 5s while the tab is visible so new
+  // payment events appear without a manual reload.
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') fetchActivities(false)
+    }, 5000)
+    return () => clearInterval(id)
+  }, [fetchActivities])
+
   const handleMarkAllRead = async () => {
     if (isMarkingAll || unreadCount === 0) return
     setIsMarkingAll(true)
