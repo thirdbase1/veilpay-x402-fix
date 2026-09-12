@@ -26,6 +26,11 @@ interface WalletContextValue {
 
 const WalletContext = createContext<WalletContextValue | undefined>(undefined)
 
+/** Remembers which extension the merchant connected through, so the session
+ * can be silently restored after a page reload (the auth cookie alone makes
+ * the UI look connected while the wallet context is empty). */
+const WALLET_ID_STORAGE_KEY = 'veilpay.connectedWalletId'
+
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<WalletConnectionStatus>('disconnected')
   const [account, setAccount] = useState<WalletAccount | null>(null)
@@ -77,6 +82,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
             network: midnightPublicConfig.network || 'testnet',
           })
           setWalletId(wallet.id)
+          window.localStorage.setItem(WALLET_ID_STORAGE_KEY, wallet.id)
           setStatus('connected')
           return
         } catch (err) {
@@ -97,7 +103,43 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Silently restore a previous wallet session after a page reload. The
+  // connector's connect() is prompt-free for already-authorized origins, so
+  // this only succeeds when the merchant approved this dapp before.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (status !== 'disconnected') return
+
+    const stored = window.localStorage.getItem(WALLET_ID_STORAGE_KEY)
+    if (!stored) return
+    if (!detectInjectedWallets().some((w) => w.id === stored)) return
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const { address } = await connectWalletApi(stored)
+        if (cancelled) return
+        setAccount({
+          address,
+          network: midnightPublicConfig.network || 'testnet',
+        })
+        setWalletId(stored)
+        setStatus('connected')
+      } catch {
+        // Restore is best-effort — the merchant can connect manually.
+        window.localStorage.removeItem(WALLET_ID_STORAGE_KEY)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [status, isExtensionDetected])
+
   const disconnect = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(WALLET_ID_STORAGE_KEY)
+    }
     setAccount(null)
     setWalletId(null)
     setStatus('disconnected')
