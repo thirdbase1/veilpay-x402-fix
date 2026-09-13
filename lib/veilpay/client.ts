@@ -138,26 +138,44 @@ async function buildProviderStack(api: ConnectedAPI, coinPkHex: string, encPkHex
   const walletProvider = createExtensionWalletProvider(api, coinPkHex, encPkHex)
   const publicDataProvider = indexerPublicDataProvider(VEILPAY_INDEXER_HTTP, VEILPAY_INDEXER_WS)
 
+  const fetchCircuitArtifact = async (path: string): Promise<Uint8Array> => {
+    const res = await fetch(path)
+    if (!res.ok) throw new Error(`Failed to load circuit artifact ${path}: ${res.status}`)
+    return new Uint8Array(await res.arrayBuffer())
+  }
+  const zkirPath = (circuitId: string) => `/veilpay/managed/zkir/${circuitId}.zkir`
+  const verifierPath = (circuitId: string) => `/veilpay/managed/keys/${circuitId}.verifier`
+
+  // Full ZKConfigProvider shape — midnight-js's findDeployedContract calls
+  // getVerifierKeys(circuitIds) to verify the deployed contract state, and
+  // callTx consumes get()/getZKIR when building the call transaction.
+  const zkConfigProvider = {
+    getZKIR: (circuitId: string) => fetchCircuitArtifact(zkirPath(circuitId)),
+    getProverKey: (circuitId: string) => fetchCircuitArtifact(verifierPath(circuitId).replace('.verifier', '.prover')),
+    getVerifierKey: (circuitId: string) => fetchCircuitArtifact(verifierPath(circuitId)),
+    getVerifierKeys: async (circuitIds: string[]) =>
+      Promise.all(
+        circuitIds.map(async (circuitId) => [circuitId, await zkConfigProvider.getVerifierKey(circuitId)] as const),
+      ),
+    get: async (circuitId: string) => ({
+      circuitId,
+      zkir: await zkConfigProvider.getZKIR(circuitId),
+      proverKey: await zkConfigProvider.getProverKey(circuitId),
+      verifierKey: await zkConfigProvider.getVerifierKey(circuitId),
+    }),
+    asKeyMaterialProvider: () => ({
+      getZKIR: zkConfigProvider.getZKIR,
+      getProverKey: zkConfigProvider.getProverKey,
+      getVerifierKey: zkConfigProvider.getVerifierKey,
+    }),
+  }
+
   return {
     privateStateProvider: createInMemoryPrivateStateProvider(),
     publicDataProvider,
     walletProvider,
-    provingProvider: await api.getProvingProvider({
-      getZKIR: async (circuitId: string) =>
-        new Uint8Array(await (await fetch(`/veilpay/managed/zkir/${circuitId}.zkir`)).arrayBuffer()),
-      getProverKey: async (circuitId: string) =>
-        new Uint8Array(await (await fetch(`/veilpay/managed/keys/${circuitId}.prover`)).arrayBuffer()),
-      getVerifierKey: async (circuitId: string) =>
-        new Uint8Array(await (await fetch(`/veilpay/managed/keys/${circuitId}.verifier`)).arrayBuffer()),
-    }),
-    zkConfigProvider: {
-      get(circuitId: string) {
-        return (async () => ({
-          zkirPath: `/veilpay/managed/zkir/${circuitId}.zkir`,
-          verifierKeyPath: `/veilpay/managed/keys/${circuitId}.verifier`,
-        }))()
-      },
-    },
+    provingProvider: await api.getProvingProvider(zkConfigProvider.asKeyMaterialProvider()),
+    zkConfigProvider,
   }
 }
 
