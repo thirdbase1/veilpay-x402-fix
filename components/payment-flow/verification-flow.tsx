@@ -61,7 +61,7 @@ export function VerificationFlow({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-2xl border border-border/70 bg-card/60 p-5 backdrop-blur-sm sm:p-6',
+        'verification-flow relative overflow-hidden rounded-2xl border border-border/70 bg-card/60 p-5 backdrop-blur-sm sm:p-6',
         className,
       )}
       role="img"
