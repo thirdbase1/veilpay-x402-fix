@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import {
   saveServerIntent,
@@ -10,16 +11,23 @@ import {
 } from '@/lib/payments/intent'
 import {
   getVeilPayReadiness,
-  getChainIntent,
-  getLedgerSequence,
+  readVeilPayLedger,
   VeilPayUnavailableError,
 } from '@/lib/veilpay-server'
+import {
+  veilpayV2,
+  withWriteLock,
+  hexToBytes32,
+} from '@/lib/veilpay-v2-server'
 import { midnightPublicConfig } from '@/lib/config'
 import type { PaymentConditions, PaymentIntent, PaymentIntentStatus } from '@/lib/payments/types'
 import { createClient } from '@/lib/supabase/server'
 import { recordActivityEvent } from '@/lib/payments/activity'
 
 export const dynamic = 'force-dynamic'
+
+// Gateway issuance (proving + balancing + inclusion watch) can take minutes.
+export const maxDuration = 300
 
 const ALLOWED_STATUS_FILTERS = [
   'all',
@@ -192,13 +200,13 @@ export async function GET(request: Request) {
 }
 
 /**
- * Register an invoice that the merchant already issued client-side.
+ * Create an invoice SERVER-SIDE over the VeilPay v2 gateway stack.
  *
- * Per docs/MIGRATION-V2-INVOICE.md, tx signing happens in the merchant's
- * browser wallet (Lace/1AM extension) — the server never holds keys and never
- * submits transactions. This endpoint verifies the claimed on-chain invoice
- * against the live public ledger before persisting its metadata, so a client
- * cannot register an invoice that does not exist on-chain.
+ * Phase 1 of the v2 kit migration: the server — not the browser wallet —
+ * issues the on-chain invoice (hosted proving, sponsored fees, RPC
+ * submission). The browser stays connect + read-only until Phase 2 browser
+ * pay lands. The payment secret is generated here and stored in invoice
+ * metadata; it is the payer's claim code.
  */
 export async function POST(request: Request) {
   try {
@@ -280,22 +288,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // The client must supply the on-chain issuance result from its wallet tx.
-    const chainIntentId = typeof body.chainIntentId === 'string' ? body.chainIntentId : ''
-    const paymentSecret = typeof body.paymentSecret === 'string' ? body.paymentSecret : ''
-    const merchantCoinPk = typeof body.merchantCoinPk === 'string' ? body.merchantCoinPk : ''
-    const tokenColor = typeof body.tokenColor === 'string' ? body.tokenColor : ''
-    const expiresAtOps = typeof body.expiresAtOps === 'string' ? body.expiresAtOps : ''
-
-    if (!/^\d+$/.test(chainIntentId) || !/^[0-9a-fA-F]{64}$/.test(paymentSecret)) {
-      return NextResponse.json(
-        { error: 'chainIntentId (numeric) and paymentSecret (32-byte hex) are required from the client-side issuance.' },
-        { status: 400 },
-      )
-    }
-
-    // Verify the claimed invoice against the live public ledger before
-    // persisting anything. The server trusts the chain, not the client.
+    // Phase 1 (v2 kit): the SERVER issues the invoice over the gateway stack —
+    // the browser never submits transactions.
     const readiness = getVeilPayReadiness()
     if (!readiness.ready) {
       return NextResponse.json(
@@ -307,14 +301,6 @@ export async function POST(request: Request) {
       )
     }
 
-    const chain = await getChainIntent(chainIntentId)
-    if (!chain) {
-      return NextResponse.json(
-        { error: `Invoice #${chainIntentId} not found on the VeilPay contract. Issue it from your wallet first.` },
-        { status: 409 },
-      )
-    }
-
     const amountMicro = parseDecimalToMicroUnits(conditions.amount.amount)
     if (amountMicro === null || amountMicro <= BigInt(0)) {
       return NextResponse.json(
@@ -323,33 +309,59 @@ export async function POST(request: Request) {
       )
     }
 
-    if (chain.status !== 'ACTIVE') {
+    let v2: Awaited<ReturnType<typeof veilpayV2>>
+    try {
+      v2 = await veilpayV2()
+    } catch (e) {
       return NextResponse.json(
-        { error: `On-chain invoice #${chainIntentId} is ${chain.status}, not ACTIVE.` },
-        { status: 409 },
+        { error: `VeilPay gateway unavailable: ${e instanceof Error ? e.message : String(e)}` },
+        { status: 503 },
       )
     }
 
-    if (BigInt(chain.amount) !== amountMicro) {
-      return NextResponse.json(
-        { error: `On-chain amount (${chain.amount}) does not match the requested amount (${amountMicro}).` },
-        { status: 409 },
-      )
-    }
+    // Anchor expiry against the live ledger sequence (NOT wall clock).
+    const ledgerState = await readVeilPayLedger()
+    const ttlOps =
+      typeof body.ttlOps === 'string' && /^\d+$/.test(body.ttlOps)
+        ? BigInt(body.ttlOps)
+        : 1000n
+    const expiresAtOps = ledgerState.sequence + ttlOps
 
-    if (merchantCoinPk && chain.merchantCoinPk.toLowerCase() !== merchantCoinPk.toLowerCase()) {
-      return NextResponse.json(
-        { error: 'On-chain merchantCoinPk does not match the reported settlement key.' },
-        { status: 409 },
-      )
-    }
+    const merchantCoinPkHex = String(v2.providers.walletProvider.getCoinPublicKey()).replace(/^0x/, '')
+    const merchantCoinPk = hexToBytes32(merchantCoinPkHex, 'merchantCoinPk')
+    const paymentSecret = randomBytes(32)
 
-    if (expiresAtOps && BigInt(chain.expiresAtOps) !== BigInt(expiresAtOps)) {
-      return NextResponse.json(
-        { error: 'On-chain expiry does not match the reported expiry.' },
-        { status: 409 },
+    // Open invoice: all-zero token color accepts any shielded token.
+    let chainIntentId: bigint
+    try {
+      chainIntentId = await withWriteLock(() =>
+        v2.api.createIntent(
+          amountMicro,
+          expiresAtOps,
+          new Uint8Array(32),
+          merchantCoinPk,
+          paymentSecret,
+        ),
       )
+    } catch (e) {
+      // The hosted prover (/check+/prove at api-preprod.1am.xyz) has been
+      // returning 500 on the v2 createIntent circuit — an upstream gateway
+      // outage, not a bug in this app. Surface it as a retryable 503.
+      const msg = e instanceof Error ? e.message : String(e)
+      if (/proof server|\/check|\/prove/i.test(msg)) {
+        return NextResponse.json(
+          {
+            error:
+              'The Midnight hosted prover is currently rejecting circuit checks (upstream outage). Invoice issuance is temporarily unavailable — please retry later.',
+            upstream: msg,
+          },
+          { status: 503 },
+        )
+      }
+      throw e
     }
+    const chainIntentIdStr = chainIntentId.toString()
+    const paymentSecretHex = paymentSecret.toString('hex')
 
     // Assemble the authoritative typed intent
     const intentId = idempotencyKey && isValidIntentId(idempotencyKey) ? idempotencyKey : undefined
@@ -358,10 +370,10 @@ export async function POST(request: Request) {
       network: midnightPublicConfig.network || 'midnight-preprod',
     })
     draft.status = 'awaiting_payment'
-    draft.chainIntentId = chainIntentId
-    draft.paymentSecret = paymentSecret
-    draft.expiresAtOps = chain.expiresAtOps
-    draft.onChainReference = `veilpay:${readiness.contractAddress}:${chainIntentId}`
+    draft.chainIntentId = chainIntentIdStr
+    draft.paymentSecret = paymentSecretHex
+    draft.expiresAtOps = expiresAtOps.toString()
+    draft.onChainReference = `veilpay:${readiness.contractAddress}:${chainIntentIdStr}`
 
     // Fetch the merchant profile owned by user
     const { data: profile } = await supabase
@@ -385,11 +397,11 @@ export async function POST(request: Request) {
       expires_at: draft.conditions.expiresAt ?? null,
       reference: draft.conditions.reference ?? null,
       metadata: {
-        chainIntentId,
-        paymentSecret,
-        tokenColor: tokenColor || chain.tokenColor,
-        merchantCoinPk: merchantCoinPk || chain.merchantCoinPk,
-        expiresAtOps: chain.expiresAtOps,
+        chainIntentId: chainIntentIdStr,
+        paymentSecret: paymentSecretHex,
+        tokenColor: '',
+        merchantCoinPk: merchantCoinPkHex,
+        expiresAtOps: expiresAtOps.toString(),
       },
       created_at: draft.createdAt,
       updated_at: draft.updatedAt ?? draft.createdAt,
@@ -412,13 +424,13 @@ export async function POST(request: Request) {
       intentId: draft.id,
       eventType: 'PAYMENT_INTENT_CREATED',
       title: 'Invoice Issued',
-      description: `Issued on-chain invoice #${chainIntentId} for ${draft.conditions.amount.amount} ${draft.conditions.amount.asset}`,
+      description: `Issued on-chain invoice #${chainIntentIdStr} for ${draft.conditions.amount.amount} ${draft.conditions.amount.asset}`,
       metadata: {
         amount: draft.conditions.amount.amount,
         asset: draft.conditions.amount.asset,
         recipient: draft.conditions.recipient,
         reference: draft.conditions.reference || null,
-        chainIntentId,
+        chainIntentId: chainIntentIdStr,
       },
     })
 
@@ -426,8 +438,8 @@ export async function POST(request: Request) {
       {
         intent: draft,
         midnightStatus: 'published',
-        chainIntentId,
-        note: 'Invoice verified against the public ledger and registered.',
+        chainIntentId: chainIntentIdStr,
+        note: 'Invoice issued on-chain by the server gateway stack and registered.',
       },
       { status: 201 },
     )

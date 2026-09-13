@@ -36,10 +36,13 @@ import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-p
 import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
 import { NodeZkConfigProvider } from '@midnight-ntwrk/midnight-js-node-zk-config-provider';
 import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
+import { Level } from 'level';
 import { Transaction, ZswapSecretKeys } from '@midnight-ntwrk/midnight-js-protocol/ledger';
 import { FailEntirely, FailFallible, SucceedEntirely, SegmentSuccess, SegmentFail, } from '@midnight-ntwrk/midnight-js-types';
 const currentDir = path.resolve(fileURLToPath(import.meta.url), '..');
-export const STATE_DIR = path.resolve(currentDir, '..', '.veilpay-state');
+export const STATE_DIR = process.env.VEILPAY_STATE_DIR
+    ? path.resolve(process.env.VEILPAY_STATE_DIR)
+    : path.resolve(currentDir, '..', '.veilpay-state');
 export const SESSION_FILE = path.join(STATE_DIR, 'gw_session.json');
 export const ADDRESS_FILE = path.join(STATE_DIR, 'contract-address');
 export const GATEWAY = 'https://api-preprod.1am.xyz';
@@ -101,8 +104,14 @@ export async function gatewaySession(seed, logger) {
     if (!vRes.ok)
         throw new Error(`gateway auth failed: ${vRes.status} ${await vRes.text()}`);
     const session = (await vRes.json());
-    fs.mkdirSync(STATE_DIR, { recursive: true });
-    fs.writeFileSync(SESSION_FILE, JSON.stringify(session));
+    // Read-only filesystems (Vercel serverless) must not fail the auth flow.
+    try {
+        fs.mkdirSync(STATE_DIR, { recursive: true });
+        fs.writeFileSync(SESSION_FILE, JSON.stringify(session));
+    }
+    catch {
+        logger.info('gateway session cache not persisted (read-only fs)');
+    }
     logger.info(`gateway session established for ${session.address}`);
     return session;
 }
@@ -503,6 +512,24 @@ export async function buildGatewayStack(logger, opts = {}) {
             signingKeyStoreName: `${storeName}-signing-keys`,
             privateStoragePasswordProvider: () => 'VeilPay-Local-2026!',
             accountId: seed,
+            // Keep leveldb under the (writable) STATE_DIR. The provider's
+            // withSubLevel opens+closes a fresh Level per operation; concurrent
+            // ops (e.g. encryption salt init racing a get/set) then double-open
+            // the same path and flock-conflict with themselves. Cache one
+            // instance per dbName and neuter close() so a single handle lives
+            // for the process lifetime.
+            levelFactory: (() => {
+                const cache = new Map();
+                return (dbName) => {
+                    let db = cache.get(dbName);
+                    if (!db) {
+                        db = new Level(path.join(STATE_DIR, 'private-state', dbName), { createIfMissing: true });
+                        db.close = async () => { };
+                        cache.set(dbName, db);
+                    }
+                    return db;
+                };
+            })(),
         }),
         publicDataProvider: withPollingWatches(basePublicData, session, pendingMidnightHashes, logger, opts.deployTxHash?.replace(/^0x/, '')),
         zkConfigProvider,
