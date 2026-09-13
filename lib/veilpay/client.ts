@@ -26,9 +26,8 @@ import type {
   WalletProvider,
 } from '@midnight-ntwrk/midnight-js-types'
 import { ZKConfigProvider } from '@midnight-ntwrk/midnight-js-types'
-import { dappConnectorProvingProvider } from '@midnight-ntwrk/midnight-js-dapp-connector-proof-provider'
 import type { FinalizedTransaction } from '@midnight-ntwrk/midnight-js-protocol/ledger'
-import type { ConnectedAPI } from '@midnight-ntwrk/dapp-connector-api'
+import type { ConnectedAPI, KeyMaterialProvider } from '@midnight-ntwrk/dapp-connector-api'
 import { VeilPay2API } from '../../vendor/veilpay/api/src/index2'
 import { connectWalletApi } from '@/lib/wallet/detect'
 import {
@@ -173,13 +172,29 @@ async function buildProviderStack(api: ConnectedAPI, coinPkHex: string, encPkHex
   const publicDataProvider = indexerPublicDataProvider(VEILPAY_INDEXER_HTTP, VEILPAY_INDEXER_WS)
   const zkConfigProvider = new ManagedCircuitZKConfigProvider()
 
+  // The extension copies the key material into its own context, where class
+  // prototype methods are lost, and its internal proof flow calls the batched
+  // getVerifierKeys on its own zkConfigProvider. Every method must therefore
+  // be an OWN property, and the batched form must exist even though the
+  // published KeyMaterialProvider type only declares the singular methods.
+  type ExtensionKeyMaterial = KeyMaterialProvider & {
+    getVerifierKeys(circuitIds: string | string[]): Promise<readonly [string, Uint8Array][]>
+  }
+  const keyMaterialProvider: ExtensionKeyMaterial = {
+    getZKIR: (circuitId) => zkConfigProvider.getZKIR(circuitId),
+    getProverKey: (circuitId) => zkConfigProvider.getProverKey(circuitId),
+    getVerifierKey: (circuitId) => zkConfigProvider.getVerifierKey(circuitId),
+    getVerifierKeys: async (circuitIds) => {
+      const ids = Array.isArray(circuitIds) ? circuitIds : [circuitIds]
+      return Promise.all(ids.map(async (id) => [id, await zkConfigProvider.getVerifierKey(id)] as const))
+    },
+  }
+
   return {
     privateStateProvider: createInMemoryPrivateStateProvider(),
     publicDataProvider,
     walletProvider,
-    // Official wiring: the official helper extracts the key material via
-    // zkConfigProvider.asKeyMaterialProvider() and hands it to the wallet.
-    provingProvider: await dappConnectorProvingProvider(api, zkConfigProvider),
+    provingProvider: await api.getProvingProvider(keyMaterialProvider),
     zkConfigProvider,
   }
 }
