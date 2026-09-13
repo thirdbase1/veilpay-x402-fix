@@ -177,13 +177,12 @@ async function resolveAddress(api: MidnightProviderApi): Promise<string | undefi
 }
 
 /** Network ids tried in order. Per the Lace DApp Connector docs, connect()
- * must target the specific network the dApp operates on — so the app's
- * configured network (preprod for this deployment) is always tried first,
- * with the others as fallbacks for older extension builds. */
+ * must target the specific network the dApp operates on. We deliberately do
+ * NOT fall back to other networks: the wallet returns a DIFFERENT address per
+ * network, and a fallback would silently change the merchant's identity. */
 function networkIdsToTry(): string[] {
   const configured = midnightPublicConfig.network?.trim()
-  const preferred = configured && configured !== 'undeployed' ? configured : 'preprod'
-  return [preferred, ...NETWORK_IDS.filter((n) => n !== preferred)]
+  return [configured && configured !== 'undeployed' ? configured : 'preprod']
 }
 
 const NETWORK_IDS = ['preview', 'preprod', 'undeployed', 'mainnet']

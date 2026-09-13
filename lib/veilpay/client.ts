@@ -167,6 +167,9 @@ async function buildProviderStack(api: ConnectedAPI, coinPkHex: string, encPkHex
       getZKIR: zkConfigProvider.getZKIR,
       getProverKey: zkConfigProvider.getProverKey,
       getVerifierKey: zkConfigProvider.getVerifierKey,
+      // The extension wraps this material in its own zkConfigProvider and
+      // calls the batched form when verifying deployed contract state.
+      getVerifierKeys: zkConfigProvider.getVerifierKeys,
     }),
   }
 
