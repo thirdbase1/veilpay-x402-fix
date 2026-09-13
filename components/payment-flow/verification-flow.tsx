@@ -2,6 +2,7 @@
 
 import { User, Lock, Boxes, Store, BadgeCheck, ArrowDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import './verification-flow.css'
 
 interface Stage {
   key: string

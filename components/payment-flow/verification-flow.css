@@ -1,0 +1,60 @@
+@keyframes flowIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes flowDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* Staggered entrance animation for each stage item */
+.verification-flow ol li:nth-child(1) {
+  animation: flowIn 0.5s ease-out 0.1s both;
+}
+
+.verification-flow ol li:nth-child(2) {
+  animation: flowIn 0.5s ease-out 0.2s both;
+}
+
+.verification-flow ol li:nth-child(3) {
+  animation: flowIn 0.5s ease-out 0.3s both;
+}
+
+.verification-flow ol li:nth-child(4) {
+  animation: flowIn 0.5s ease-out 0.4s both;
+}
+
+/* Enhanced arrow animation */
+.verification-flow span[aria-hidden="true"] {
+  animation: flowDown 2s ease-in-out infinite;
+}
+
+/* Container shimmer effect on entrance */
+.verification-flow > div:nth-child(2) {
+  animation: flowIn 0.6s ease-out;
+}
