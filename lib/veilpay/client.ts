@@ -25,6 +25,8 @@ import type {
   UnboundTransaction,
   WalletProvider,
 } from '@midnight-ntwrk/midnight-js-types'
+import { ZKConfigProvider } from '@midnight-ntwrk/midnight-js-types'
+import { dappConnectorProvingProvider } from '@midnight-ntwrk/midnight-js-dapp-connector-proof-provider'
 import type { FinalizedTransaction } from '@midnight-ntwrk/midnight-js-protocol/ledger'
 import type { ConnectedAPI } from '@midnight-ntwrk/dapp-connector-api'
 import { VeilPay2API } from '../../vendor/veilpay/api/src/index2'
@@ -133,51 +135,51 @@ export async function connectMerchantWallet(walletId: string): Promise<{ coinPkH
   return { coinPkHex: cachedConnection.coinPkHex }
 }
 
-/** Build the full midnight-js provider stack backed by the extension + public indexer. */
-async function buildProviderStack(api: ConnectedAPI, coinPkHex: string, encPkHex: string) {
-  const walletProvider = createExtensionWalletProvider(api, coinPkHex, encPkHex)
-  const publicDataProvider = indexerPublicDataProvider(VEILPAY_INDEXER_HTTP, VEILPAY_INDEXER_WS)
-
-  const fetchCircuitArtifact = async (path: string): Promise<Uint8Array> => {
+/**
+ * Circuit key material served from the compiled artifacts in
+ * public/veilpay/managed/. Extends the official ZKConfigProvider abstract
+ * class so the concrete getVerifierKeys/get/asKeyMaterialProvider methods
+ * come from midnight-js itself — findDeployedContract calls
+ * getVerifierKeys(circuitIds) when joining the deployed contract.
+ */
+class ManagedCircuitZKConfigProvider extends ZKConfigProvider<string> {
+  private async fetchArtifact(path: string): Promise<Uint8Array> {
     const res = await fetch(path)
     if (!res.ok) throw new Error(`Failed to load circuit artifact ${path}: ${res.status}`)
     return new Uint8Array(await res.arrayBuffer())
   }
-  const zkirPath = (circuitId: string) => `/veilpay/managed/zkir/${circuitId}.zkir`
-  const verifierPath = (circuitId: string) => `/veilpay/managed/keys/${circuitId}.verifier`
 
-  // Full ZKConfigProvider shape — midnight-js's findDeployedContract calls
-  // getVerifierKeys(circuitIds) to verify the deployed contract state, and
-  // callTx consumes get()/getZKIR when building the call transaction.
-  const zkConfigProvider = {
-    getZKIR: (circuitId: string) => fetchCircuitArtifact(zkirPath(circuitId)),
-    getProverKey: (circuitId: string) => fetchCircuitArtifact(verifierPath(circuitId).replace('.verifier', '.prover')),
-    getVerifierKey: (circuitId: string) => fetchCircuitArtifact(verifierPath(circuitId)),
-    getVerifierKeys: async (circuitIds: string[]) =>
-      Promise.all(
-        circuitIds.map(async (circuitId) => [circuitId, await zkConfigProvider.getVerifierKey(circuitId)] as const),
-      ),
-    get: async (circuitId: string) => ({
-      circuitId,
-      zkir: await zkConfigProvider.getZKIR(circuitId),
-      proverKey: await zkConfigProvider.getProverKey(circuitId),
-      verifierKey: await zkConfigProvider.getVerifierKey(circuitId),
-    }),
-    asKeyMaterialProvider: () => ({
-      getZKIR: zkConfigProvider.getZKIR,
-      getProverKey: zkConfigProvider.getProverKey,
-      getVerifierKey: zkConfigProvider.getVerifierKey,
-      // The extension wraps this material in its own zkConfigProvider and
-      // calls the batched form when verifying deployed contract state.
-      getVerifierKeys: zkConfigProvider.getVerifierKeys,
-    }),
+  // Mirrors the official NodeZkConfigProvider/FetchZkConfigProvider layout:
+  // zkir/{circuit}.bzkir (binary ZKIR) and keys/{circuit}.verifier. This
+  // compactc generation emits no separate .prover files — the proving
+  // material travels inside the .bzkir the proof server consumes — so
+  // getProverKey serves those same bytes if the wallet requests them.
+  override getZKIR(circuitId: string) {
+    return this.fetchArtifact(`/veilpay/managed/zkir/${circuitId}.bzkir`) as never
   }
+
+  override getProverKey(circuitId: string) {
+    return this.fetchArtifact(`/veilpay/managed/zkir/${circuitId}.bzkir`) as never
+  }
+
+  override getVerifierKey(circuitId: string) {
+    return this.fetchArtifact(`/veilpay/managed/keys/${circuitId}.verifier`) as never
+  }
+}
+
+/** Build the full midnight-js provider stack backed by the extension + public indexer. */
+async function buildProviderStack(api: ConnectedAPI, coinPkHex: string, encPkHex: string) {
+  const walletProvider = createExtensionWalletProvider(api, coinPkHex, encPkHex)
+  const publicDataProvider = indexerPublicDataProvider(VEILPAY_INDEXER_HTTP, VEILPAY_INDEXER_WS)
+  const zkConfigProvider = new ManagedCircuitZKConfigProvider()
 
   return {
     privateStateProvider: createInMemoryPrivateStateProvider(),
     publicDataProvider,
     walletProvider,
-    provingProvider: await api.getProvingProvider(zkConfigProvider.asKeyMaterialProvider()),
+    // Official wiring: the official helper extracts the key material via
+    // zkConfigProvider.asKeyMaterialProvider() and hands it to the wallet.
+    provingProvider: await dappConnectorProvingProvider(api, zkConfigProvider),
     zkConfigProvider,
   }
 }

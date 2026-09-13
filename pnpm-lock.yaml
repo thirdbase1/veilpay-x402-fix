@@ -26,10 +26,19 @@ importers:
       '@midnight-ntwrk/midnight-js-contracts':
         specifier: 4.1.1
         version: 4.1.1
+      '@midnight-ntwrk/midnight-js-dapp-connector-proof-provider':
+        specifier: 4.1.1
+        version: 4.1.1
+      '@midnight-ntwrk/midnight-js-fetch-zk-config-provider':
+        specifier: 4.1.1
+        version: 4.1.1
       '@midnight-ntwrk/midnight-js-indexer-public-data-provider':
         specifier: 4.1.1
         version: 4.1.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@midnight-ntwrk/midnight-js-network-id':
+        specifier: 4.1.1
+        version: 4.1.1
+      '@midnight-ntwrk/midnight-js-node-zk-config-provider':
         specifier: 4.1.1
         version: 4.1.1
       '@midnight-ntwrk/midnight-js-protocol':
@@ -561,11 +570,20 @@ packages:
   '@midnight-ntwrk/midnight-js-contracts@4.1.1':
     resolution: {integrity: sha512-vHeKyaj9RXTx+Cep3YpIRgg2EWkzibO4gxI7k/rYpXmGXc3waetrR5sb9FPR7v9SUX00/zf/sYbLp1NZhwZbjg==}
 
+  '@midnight-ntwrk/midnight-js-dapp-connector-proof-provider@4.1.1':
+    resolution: {integrity: sha512-iRIhP6fglo0KazXmix0qNjXl9w+qUT09HITpjnUHVs650TyI+nUXwWfdXziijKV7qldVbJtBZXnm6pNJq/y3+Q==}
+
+  '@midnight-ntwrk/midnight-js-fetch-zk-config-provider@4.1.1':
+    resolution: {integrity: sha512-d9vPAXjCvbe3KdPDBwp8Cp4HXwdo9jfCjeyJjJPfIDHCctXrIQ7btu+CqY1+bgV05FHVMOBLjJ9TS2tc2xdwrw==}
+
   '@midnight-ntwrk/midnight-js-indexer-public-data-provider@4.1.1':
     resolution: {integrity: sha512-50CjiYqw/msRintyfkuNrJl1v4Zj+AaBFmV2uLjY/zpkPop4VBFH4QZSrtKsG1ljT9vzWsxU7Eo4Tn1tgKkPlA==}
 
   '@midnight-ntwrk/midnight-js-network-id@4.1.1':
     resolution: {integrity: sha512-g49IBK0In1Jt2wKgi18rUvoy1ShGVrfb/VvgWALkc9Noc6+4MX5NTLVg5zqu+CyO2waIGb5lqDPnAhTD9wPAOQ==}
+
+  '@midnight-ntwrk/midnight-js-node-zk-config-provider@4.1.1':
+    resolution: {integrity: sha512-fbBhLBhU/BjrQRnRJCcmKkhYRLlSqJyXEhq72vMS6vlKXprmDmAjlVV62+bn1aiAlNY9FXl1rrrMUFKQUmuZFg==}
 
   '@midnight-ntwrk/midnight-js-protocol@4.1.1':
     resolution: {integrity: sha512-JH1010ir3YrawKsA4C08aIXWpFGHrCrAaBkZFbn+xh+iwOX5Ss0WU4//mDSEnHvQN0wD6GTc2JwUfKYFaS2CcA==}
@@ -2845,6 +2863,20 @@ snapshots:
       '@midnight-ntwrk/midnight-js-types': 4.1.1
       '@midnight-ntwrk/midnight-js-utils': 4.1.1
 
+  '@midnight-ntwrk/midnight-js-dapp-connector-proof-provider@4.1.1':
+    dependencies:
+      '@midnight-ntwrk/dapp-connector-api': 4.0.1
+      '@midnight-ntwrk/midnight-js-protocol': 4.1.1
+      '@midnight-ntwrk/midnight-js-types': 4.1.1
+
+  '@midnight-ntwrk/midnight-js-fetch-zk-config-provider@4.1.1':
+    dependencies:
+      '@midnight-ntwrk/midnight-js-types': 4.1.1
+      '@midnight-ntwrk/midnight-js-utils': 4.1.1
+      cross-fetch: 4.1.0
+    transitivePeerDependencies:
+      - encoding
+
   '@midnight-ntwrk/midnight-js-indexer-public-data-provider@4.1.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
       '@apollo/client': 4.3.0(graphql-ws@6.2.1(graphql@16.14.2)(ws@8.21.3))(graphql@16.14.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rxjs@7.8.2)
@@ -2871,6 +2903,11 @@ snapshots:
       - utf-8-validate
 
   '@midnight-ntwrk/midnight-js-network-id@4.1.1': {}
+
+  '@midnight-ntwrk/midnight-js-node-zk-config-provider@4.1.1':
+    dependencies:
+      '@midnight-ntwrk/midnight-js-types': 4.1.1
+      '@midnight-ntwrk/midnight-js-utils': 4.1.1
 
   '@midnight-ntwrk/midnight-js-protocol@4.1.1':
     dependencies:
