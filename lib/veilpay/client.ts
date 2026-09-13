@@ -26,8 +26,9 @@ import type {
   WalletProvider,
 } from '@midnight-ntwrk/midnight-js-types'
 import { ZKConfigProvider } from '@midnight-ntwrk/midnight-js-types'
-import type { FinalizedTransaction } from '@midnight-ntwrk/midnight-js-protocol/ledger'
-import type { ConnectedAPI, KeyMaterialProvider } from '@midnight-ntwrk/dapp-connector-api'
+import { dappConnectorProofProvider } from '@midnight-ntwrk/midnight-js-dapp-connector-proof-provider'
+import { CostModel, type FinalizedTransaction } from '@midnight-ntwrk/midnight-js-protocol/ledger'
+import type { ConnectedAPI } from '@midnight-ntwrk/dapp-connector-api'
 import { VeilPay2API } from '../../vendor/veilpay/api/src/index2'
 import { connectWalletApi } from '@/lib/wallet/detect'
 import {
@@ -164,6 +165,23 @@ class ManagedCircuitZKConfigProvider extends ZKConfigProvider<string> {
   override getVerifierKey(circuitId: string) {
     return this.fetchArtifact(`/veilpay/managed/keys/${circuitId}.verifier`) as never
   }
+
+  // The extension copies the key material into its own context, where class
+  // prototype methods are lost, and its internal proof flow calls the batched
+  // getVerifierKeys on the copied object. The base class returns `this` here,
+  // which would hand over prototype-only methods — override it with a plain
+  // object whose every method is an OWN property, batched form included.
+  override asKeyMaterialProvider() {
+    return {
+      getZKIR: (circuitId: string) => this.getZKIR(circuitId),
+      getProverKey: (circuitId: string) => this.getProverKey(circuitId),
+      getVerifierKey: (circuitId: string) => this.getVerifierKey(circuitId),
+      getVerifierKeys: async (circuitIds: string | readonly string[]) => {
+        const ids = Array.isArray(circuitIds) ? circuitIds : [circuitIds]
+        return Promise.all(ids.map(async (id) => [id, await this.getVerifierKey(id)] as const))
+      },
+    }
+  }
 }
 
 /** Build the full midnight-js provider stack backed by the extension + public indexer. */
@@ -172,29 +190,15 @@ async function buildProviderStack(api: ConnectedAPI, coinPkHex: string, encPkHex
   const publicDataProvider = indexerPublicDataProvider(VEILPAY_INDEXER_HTTP, VEILPAY_INDEXER_WS)
   const zkConfigProvider = new ManagedCircuitZKConfigProvider()
 
-  // The extension copies the key material into its own context, where class
-  // prototype methods are lost, and its internal proof flow calls the batched
-  // getVerifierKeys on its own zkConfigProvider. Every method must therefore
-  // be an OWN property, and the batched form must exist even though the
-  // published KeyMaterialProvider type only declares the singular methods.
-  type ExtensionKeyMaterial = KeyMaterialProvider & {
-    getVerifierKeys(circuitIds: string | string[]): Promise<readonly [string, Uint8Array][]>
-  }
-  const keyMaterialProvider: ExtensionKeyMaterial = {
-    getZKIR: (circuitId) => zkConfigProvider.getZKIR(circuitId),
-    getProverKey: (circuitId) => zkConfigProvider.getProverKey(circuitId),
-    getVerifierKey: (circuitId) => zkConfigProvider.getVerifierKey(circuitId),
-    getVerifierKeys: async (circuitIds) => {
-      const ids = Array.isArray(circuitIds) ? circuitIds : [circuitIds]
-      return Promise.all(ids.map(async (id) => [id, await zkConfigProvider.getVerifierKey(id)] as const))
-    },
-  }
-
+  // Mirrors the repo's working CLI wiring (cli/src/index.ts): proofProvider
+  // (not provingProvider) plus midnightProvider are both required by
+  // MidnightProviders — omitting either breaks findDeployedContract.
   return {
     privateStateProvider: createInMemoryPrivateStateProvider(),
     publicDataProvider,
     walletProvider,
-    provingProvider: await api.getProvingProvider(keyMaterialProvider),
+    midnightProvider: walletProvider,
+    proofProvider: await dappConnectorProofProvider(api, zkConfigProvider, CostModel.initialCostModel()),
     zkConfigProvider,
   }
 }
