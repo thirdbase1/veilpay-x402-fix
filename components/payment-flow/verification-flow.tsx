@@ -1,7 +1,7 @@
 'use client'
 
-import type { CSSProperties } from 'react'
-import { User, Lock, Boxes, Store, BadgeCheck, ArrowDown } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { User, Lock, Boxes, Store, ArrowDown, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import './verification-flow.css'
 
@@ -58,7 +58,69 @@ const toneRing: Record<Stage['tone'], string> = {
   verified: 'border-accent/40 bg-accent/10 text-accent',
 }
 
+/** One sequencer tick per pipeline step; the last tick holds everything done. */
+const STEP_MS = 1400
+const TOTAL_STEPS = stages.length + 2
+
+const HEX = '0123456789abcdef'
+
+function randomGlyphs(count: number): string[] {
+  return Array.from(
+    { length: count },
+    () => HEX[Math.floor(Math.random() * HEX.length)] + HEX[Math.floor(Math.random() * HEX.length)],
+  )
+}
+
+/**
+ * Sealed payment detail in transit: scrambled ciphertext that only resolves
+ * at the end of the pipeline — the visual core of "nothing revealed".
+ */
+function CipherStream({ active }: { active: boolean }) {
+  // Deterministic seed so server and client markup match; randomness only
+  // starts after mount, once the stream is actually in transit.
+  const [glyphs, setGlyphs] = useState<string[]>(['··', '··', '··'])
+
+  useEffect(() => {
+    if (!active) return
+    setGlyphs(randomGlyphs(3))
+    const id = window.setInterval(() => setGlyphs(randomGlyphs(3)), 90)
+    return () => window.clearInterval(id)
+  }, [active])
+
+  return (
+    <span
+      className={cn(
+        'cipher-stream font-mono text-[10px] tracking-[0.28em] text-primary transition-opacity duration-300',
+        active ? 'opacity-100' : 'opacity-0',
+      )}
+      aria-hidden="true"
+    >
+      {glyphs.join(' ')}
+    </span>
+  )
+}
+
 export function VerificationFlow({ className }: { className?: string }) {
+  const [step, setStep] = useState(0)
+  const [reduced, setReduced] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setReduced(mq.matches)
+    const onChange = () => setReduced(mq.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
+  useEffect(() => {
+    if (reduced) return
+    const id = window.setInterval(() => setStep((s) => (s + 1) % TOTAL_STEPS), STEP_MS)
+    return () => window.clearInterval(id)
+  }, [reduced])
+
+  // In reduced-motion mode the pipeline renders fully verified, statically.
+  const current = reduced ? TOTAL_STEPS - 1 : step
+
   return (
     <div
       className={cn(
@@ -82,12 +144,13 @@ export function VerificationFlow({ className }: { className?: string }) {
       <ol className="relative mt-5 flex flex-col gap-3">
         {stages.map((stage, i) => {
           const Icon = stage.icon
+          const state = i < current ? 'done' : i === current ? 'active' : 'idle'
+          const streaming = current === i
           return (
             <li key={stage.key} className="flex flex-col">
               <div
                 className="flow-stage flex items-start gap-3 rounded-xl border border-border/60 bg-background/40 p-3"
-                data-stage={stage.key}
-                style={{ '--stage-delay': `${i * 1.35}s` } as CSSProperties}
+                data-state={state}
               >
                 <span
                   className={cn(
@@ -97,29 +160,37 @@ export function VerificationFlow({ className }: { className?: string }) {
                 >
                   <Icon className="size-5" aria-hidden="true" />
                 </span>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground">{stage.title}</p>
                   <p className="text-xs text-muted-foreground">{stage.detail}</p>
                 </div>
+                {state === 'done' && (
+                  <Check className="check-pop size-4 shrink-0 text-primary" aria-hidden="true" />
+                )}
               </div>
-              {i < stages.length - 1 && (
-                <span
-                  className="flow-arrow my-1 flex justify-center"
-                  style={{ '--signal-delay': `${i * 1.35 + 0.8}s` } as CSSProperties}
-                  aria-hidden="true"
-                >
-                  <ArrowDown className="flow-arrow-icon size-4 text-primary/60" />
-                  <span className="flow-packet" />
-                </span>
-              )}
+              <span
+                className="flow-arrow my-1 flex items-center justify-center gap-2"
+                data-streaming={streaming}
+                aria-hidden="true"
+              >
+                <CipherStream active={streaming} />
+                <ArrowDown className="flow-arrow-icon size-4 text-muted-foreground/50" />
+              </span>
             </li>
           )
         })}
       </ol>
 
-      <div className="flow-result relative mt-3 flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/10 p-3">
+      <div
+        className="flow-result relative mt-3 flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/10 p-3"
+        data-state={current > stages.length - 1 ? 'done' : current === stages.length - 1 + 1 ? 'active' : 'idle'}
+      >
         <span className="flow-result-icon flex size-10 shrink-0 items-center justify-center rounded-lg border border-accent/40 bg-accent/15 text-accent">
-          <BadgeCheck className="size-5" aria-hidden="true" />
+          {/* Seal draws itself only once the proof arrives. */}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="size-5">
+            <circle cx="12" cy="12" r="9" pathLength={1} className="draw-ring" aria-hidden="true" />
+            <path d="M8.5 12.5l2.5 2.5 4.5-5" pathLength={1} className="draw-check" aria-hidden="true" />
+          </svg>
         </span>
         <div>
           <p className="text-sm font-medium text-foreground">Verified</p>
