@@ -104,46 +104,20 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
 
 export async function createPaymentIntentApi(
   conditions: PaymentConditions,
-  walletId: string | null,
+  _walletId: string | null,
 ): Promise<{ intent: PaymentIntent; midnightStatus: 'published' | 'integration_pending' }> {
-  if (!walletId) {
-    throw new Error(
-      'Connect your Midnight wallet extension first — invoices are signed from your own wallet.',
-    )
-  }
-
-  // Per docs/MIGRATION-V2-INVOICE.md: the invoice is issued client-side (the
-  // wallet signs createIntent), then the server verifies it against the
-  // public ledger and registers its metadata.
-  const { issueInvoice } = await import('@/lib/veilpay/client')
-  const { parseDecimalToMicroUnits } = await import('@/lib/payments/intent')
-
-  const amountMicro = parseDecimalToMicroUnits(conditions.amount.amount)
-  if (amountMicro === null || amountMicro <= 0n) {
-    throw new Error('Amount must be a positive decimal number with at most 6 decimal places.')
-  }
-
-  const issued = await issueInvoice(walletId, {
-    amountMicro,
-    ttlOps: 50,
-  })
-
+  // Phase 1 (v2 kit): invoices are issued by the SERVER gateway stack; the
+  // browser wallet is connect + read-only until Phase 2 browser pay lands.
   const res = await fetch('/api/intents', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      conditions,
-      chainIntentId: issued.chainIntentId,
-      paymentSecret: issued.paymentSecret,
-      merchantCoinPk: issued.merchantCoinPk,
-      tokenColor: issued.tokenColor,
-      expiresAtOps: issued.expiresAtOps,
-    }),
+    body: JSON.stringify({ conditions }),
+    cache: 'no-store',
   })
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }))
-    throw new Error(err.error || err.message || 'Failed to register invoice')
+    throw new Error(err.error || err.message || 'Failed to create invoice')
   }
 
   return res.json()

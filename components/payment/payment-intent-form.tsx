@@ -94,12 +94,6 @@ export function PaymentIntentForm() {
     setSubmitError(null)
 
     if (!isValid) return
-    if (!walletId) {
-      setSubmitError(
-        'Connect your Midnight wallet extension first — invoices are signed from your own wallet.',
-      )
-      return
-    }
 
     setIsSubmitting(true)
 

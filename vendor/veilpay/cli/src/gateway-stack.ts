@@ -38,6 +38,8 @@ import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-p
 import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
 import { NodeZkConfigProvider } from '@midnight-ntwrk/midnight-js-node-zk-config-provider';
 import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
+import type { LevelFactory } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
+import { Level } from 'level';
 import { Transaction, ZswapSecretKeys } from '@midnight-ntwrk/midnight-js-protocol/ledger';
 import { type TransactionId } from '@midnight-ntwrk/midnight-js-protocol/ledger';
 import {
@@ -56,7 +58,9 @@ import { type VeilPay2Providers, type PrivateStateId2 } from '../../api/src/comm
 import { type VeilPay2PrivateState } from '../../contract/src/witnesses2.js';
 
 const currentDir = path.resolve(fileURLToPath(import.meta.url), '..');
-export const STATE_DIR = path.resolve(currentDir, '..', '.veilpay-state');
+export const STATE_DIR = process.env.VEILPAY_STATE_DIR
+  ? path.resolve(process.env.VEILPAY_STATE_DIR)
+  : path.resolve(currentDir, '..', '.veilpay-state');
 export const SESSION_FILE = path.join(STATE_DIR, 'gw_session.json');
 export const ADDRESS_FILE = path.join(STATE_DIR, 'contract-address');
 
@@ -133,8 +137,14 @@ export async function gatewaySession(seed: string, logger: Logger): Promise<Gate
   });
   if (!vRes.ok) throw new Error(`gateway auth failed: ${vRes.status} ${await vRes.text()}`);
   const session = (await vRes.json()) as GatewaySession;
-  fs.mkdirSync(STATE_DIR, { recursive: true });
-  fs.writeFileSync(SESSION_FILE, JSON.stringify(session));
+  // Read-only filesystems (Vercel serverless) must not fail the auth flow;
+  // the session is simply re-established on the next cold start.
+  try {
+    fs.mkdirSync(STATE_DIR, { recursive: true });
+    fs.writeFileSync(SESSION_FILE, JSON.stringify(session));
+  } catch {
+    logger.info('gateway session cache not persisted (read-only fs)');
+  }
   logger.info(`gateway session established for ${session.address}`);
   return session;
 }
@@ -599,6 +609,14 @@ export async function buildGatewayStack(
       signingKeyStoreName: `${storeName}-signing-keys`,
       privateStoragePasswordProvider: () => 'VeilPay-Local-2026!',
       accountId: seed,
+      // Keep leveldb under the (writable) STATE_DIR — the app cwd is
+      // read-only on Vercel serverless. Cast needed: pnpm resolves two
+      // abstract-level majors (provider: 3.x, level@8: 1.x); runtime API
+      // used by the provider is compatible.
+      levelFactory: ((dbName: string) =>
+        new Level(path.join(STATE_DIR, 'private-state', dbName), {
+          createIfMissing: true,
+        })) as unknown as LevelFactory,
     }) as unknown as VeilPayProviders['privateStateProvider'] & VeilPay2Providers['privateStateProvider'],
     publicDataProvider: withPollingWatches(
       basePublicData,

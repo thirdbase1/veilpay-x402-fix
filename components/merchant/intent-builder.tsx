@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Check, Copy, Lock } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Check, Copy } from 'lucide-react'
 import {
   AMOUNT_PREDICATES,
   SUPPORTED_ASSETS,
@@ -13,8 +14,10 @@ import type {
   AmountPredicateKind,
   AssetSymbol,
   PaymentConditions,
+  PaymentIntent,
 } from '@/lib/payments/types'
-import { isMidnightConfigured, midnightPublicConfig } from '@/lib/config'
+import { createPaymentIntentApi } from '@/lib/payments/service'
+import { midnightPublicConfig } from '@/lib/config'
 import { cn } from '@/lib/utils'
 
 const inputClass =
@@ -26,7 +29,7 @@ function fieldError(issues: { field: string; message: string }[], field: string)
 }
 
 export function IntentBuilder() {
-  const midnightReady = isMidnightConfigured()
+  const router = useRouter()
 
   const [conditions, setConditions] = useState<PaymentConditions>({
     amount: { kind: 'exactly', asset: SUPPORTED_ASSETS[0], amount: '', amountMax: '' },
@@ -36,6 +39,9 @@ export function IntentBuilder() {
   })
   const [touched, setTouched] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [createdIntent, setCreatedIntent] = useState<PaymentIntent | null>(null)
   // Set only after mount so the SSR and initial client render match (avoids a
   // hydration mismatch from a render-time timestamp).
   const [createdAt, setCreatedAt] = useState<string | null>(null)
@@ -95,15 +101,29 @@ export function IntentBuilder() {
   const showError = (field: string) =>
     touched ? fieldError(issues, field) : undefined
 
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setTouched(true)
+    if (!isValid || submitting) return
+    setSubmitting(true)
+    setSubmitError(null)
+    try {
+      const { intent } = await createPaymentIntentApi(conditions, null)
+      setCreatedIntent(intent)
+      router.refresh()
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to create invoice')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr] lg:gap-8">
       {/* Form */}
       <form
         className="flex flex-col gap-5 rounded-2xl border border-border/70 bg-card/40 p-6"
-        onSubmit={(e) => {
-          e.preventDefault()
-          setTouched(true)
-        }}
+        onSubmit={handleSubmit}
         noValidate
       >
         <fieldset className="flex flex-col gap-4">
@@ -256,17 +276,28 @@ export function IntentBuilder() {
         <div className="flex flex-col gap-3">
           <button
             type="submit"
-            disabled={!midnightReady || !isValid}
+            disabled={submitting || !isValid}
             className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {!midnightReady && <Lock className="size-4" />}
-            {midnightReady ? 'Create on Midnight' : 'Midnight integration pending'}
+            {submitting ? 'Issuing on-chain…' : 'Create invoice'}
           </button>
-          {!midnightReady && (
-            <p className="text-xs text-muted-foreground">
-              Creating an intent requires a configured Midnight contract. This build ships the
-              typed integration boundary only — no simulated transactions are performed.
+          {submitError && (
+            <p className="text-xs text-destructive" role="alert">
+              {submitError}
             </p>
+          )}
+          {createdIntent && (
+            <div className="rounded-lg border border-border/60 bg-background/40 p-3 text-sm">
+              <p className="font-medium text-foreground">
+                Invoice issued on-chain — #{createdIntent.chainIntentId}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Share the payment link with your customer:
+              </p>
+              <code className="mt-1 block overflow-x-auto rounded-md border border-border/60 bg-background/60 p-2 font-mono text-xs text-foreground">
+                {`/pay/${createdIntent.chainIntentId}?secret=${createdIntent.paymentSecret}`}
+              </code>
+            </div>
           )}
         </div>
       </form>
