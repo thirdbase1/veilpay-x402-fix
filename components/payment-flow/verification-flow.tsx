@@ -1,5 +1,6 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import { User, Lock, Boxes, Store, BadgeCheck, ArrowDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import './verification-flow.css'
@@ -83,7 +84,11 @@ export function VerificationFlow({ className }: { className?: string }) {
           const Icon = stage.icon
           return (
             <li key={stage.key} className="flex flex-col">
-              <div className="flex items-start gap-3 rounded-xl border border-border/60 bg-background/40 p-3">
+              <div
+                className="flow-stage flex items-start gap-3 rounded-xl border border-border/60 bg-background/40 p-3"
+                data-stage={stage.key}
+                style={{ '--stage-delay': `${i * 1.35}s` } as CSSProperties}
+              >
                 <span
                   className={cn(
                     'flex size-10 shrink-0 items-center justify-center rounded-lg border',
@@ -98,8 +103,13 @@ export function VerificationFlow({ className }: { className?: string }) {
                 </div>
               </div>
               {i < stages.length - 1 && (
-                <span className="my-1 flex justify-center" aria-hidden="true">
-                  <ArrowDown className="size-4 animate-pulse text-primary/60 motion-reduce:animate-none" />
+                <span
+                  className="flow-arrow my-1 flex justify-center"
+                  style={{ '--signal-delay': `${i * 1.35 + 0.8}s` } as CSSProperties}
+                  aria-hidden="true"
+                >
+                  <ArrowDown className="flow-arrow-icon size-4 text-primary/60" />
+                  <span className="flow-packet" />
                 </span>
               )}
             </li>
@@ -107,8 +117,8 @@ export function VerificationFlow({ className }: { className?: string }) {
         })}
       </ol>
 
-      <div className="relative mt-3 flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/10 p-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-accent/40 bg-accent/15 text-accent">
+      <div className="flow-result relative mt-3 flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/10 p-3">
+        <span className="flow-result-icon flex size-10 shrink-0 items-center justify-center rounded-lg border border-accent/40 bg-accent/15 text-accent">
           <BadgeCheck className="size-5" aria-hidden="true" />
         </span>
         <div>

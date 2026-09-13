@@ -1,60 +1,163 @@
-@keyframes flowIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
+.verification-flow {
+  --flow-cycle: 6.75s;
+}
+
+@keyframes veilpay-stage-check {
+  0%,
+  7% {
+    background-color: color-mix(in srgb, var(--background) 40%, transparent);
+    border-color: color-mix(in srgb, var(--border) 60%, transparent);
+    box-shadow: none;
+    transform: translateY(0);
   }
-  to {
-    opacity: 1;
+  10%,
+  24% {
+    background-color: color-mix(in srgb, var(--primary) 8%, var(--background));
+    border-color: color-mix(in srgb, var(--primary) 58%, var(--border));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent),
+      0 10px 30px -22px var(--primary);
+    transform: translateY(-1px);
+  }
+  30%,
+  100% {
+    background-color: color-mix(in srgb, var(--background) 40%, transparent);
+    border-color: color-mix(in srgb, var(--border) 60%, transparent);
+    box-shadow: none;
     transform: translateY(0);
   }
 }
 
-@keyframes flowDown {
-  0% {
+@keyframes veilpay-proof-packet {
+  0%,
+  4% {
     opacity: 0;
-    transform: translateY(-4px);
+    transform: translate(-50%, -180%) scale(0.35);
   }
-  50% {
+  7%,
+  16% {
     opacity: 1;
+    transform: translate(-50%, -20%) scale(0.9);
   }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, 125%) scale(1);
+  }
+  24%,
   100% {
-    opacity: 0.6;
-    transform: translateY(4px);
+    opacity: 0;
+    transform: translate(-50%, 180%) scale(0.35);
   }
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
+@keyframes veilpay-arrow-receive {
+  0%,
+  5% {
+    color: color-mix(in srgb, var(--primary) 55%, var(--muted-foreground));
+    filter: none;
   }
+  10%,
+  22% {
+    color: var(--primary);
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--primary) 42%, transparent));
+  }
+  28%,
   100% {
-    background-position: 1000px 0;
+    color: color-mix(in srgb, var(--primary) 55%, var(--muted-foreground));
+    filter: none;
   }
 }
 
-/* Staggered entrance animation for each stage item */
-.verification-flow ol li:nth-child(1) {
-  animation: flowIn 0.5s ease-out 0.1s both;
+@keyframes veilpay-result-check {
+  0%,
+  7% {
+    background-color: color-mix(in srgb, var(--accent) 15%, var(--background));
+    border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+    box-shadow: none;
+    transform: translateY(0);
+  }
+  10%,
+  24% {
+    background-color: color-mix(in srgb, var(--accent) 22%, var(--background));
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent),
+      0 12px 34px -20px var(--accent);
+    transform: translateY(-1px);
+  }
+  30%,
+  100% {
+    background-color: color-mix(in srgb, var(--accent) 15%, var(--background));
+    border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+    box-shadow: none;
+    transform: translateY(0);
+  }
 }
 
-.verification-flow ol li:nth-child(2) {
-  animation: flowIn 0.5s ease-out 0.2s both;
+@keyframes veilpay-badge-confirm {
+  0%,
+  7% {
+    transform: scale(1) rotate(0deg);
+  }
+  10%,
+  24% {
+    transform: scale(1.08) rotate(4deg);
+  }
+  30%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
 }
 
-.verification-flow ol li:nth-child(3) {
-  animation: flowIn 0.5s ease-out 0.3s both;
+.verification-flow .flow-stage {
+  animation: veilpay-stage-check var(--flow-cycle) linear infinite;
+  animation-delay: var(--stage-delay);
+  will-change: background-color, border-color, box-shadow, transform;
 }
 
-.verification-flow ol li:nth-child(4) {
-  animation: flowIn 0.5s ease-out 0.4s both;
+.verification-flow .flow-arrow {
+  position: relative;
+  min-height: 1rem;
 }
 
-/* Enhanced arrow animation */
-.verification-flow span[aria-hidden="true"] {
-  animation: flowDown 2s ease-in-out infinite;
+.verification-flow .flow-arrow-icon {
+  animation: veilpay-arrow-receive var(--flow-cycle) linear infinite;
+  animation-delay: var(--signal-delay);
 }
 
-/* Container shimmer effect on entrance */
-.verification-flow > div:nth-child(2) {
-  animation: flowIn 0.6s ease-out;
+.verification-flow .flow-packet {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: 0.45rem;
+  height: 0.45rem;
+  border: 1px solid var(--primary);
+  border-radius: 9999px;
+  background-color: var(--background);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 12%, transparent),
+    0 0 10px color-mix(in srgb, var(--primary) 38%, transparent);
+  animation: veilpay-proof-packet var(--flow-cycle) linear infinite;
+  animation-delay: var(--signal-delay);
+  pointer-events: none;
+}
+
+.verification-flow .flow-result {
+  animation: veilpay-result-check var(--flow-cycle) linear infinite;
+  animation-delay: 5.4s;
+  will-change: background-color, border-color, box-shadow, transform;
+}
+
+.verification-flow .flow-result-icon {
+  animation: veilpay-badge-confirm var(--flow-cycle) linear infinite;
+  animation-delay: 5.4s;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .verification-flow .flow-stage,
+  .verification-flow .flow-arrow-icon,
+  .verification-flow .flow-packet,
+  .verification-flow .flow-result,
+  .verification-flow .flow-result-icon {
+    animation: none;
+  }
 }
