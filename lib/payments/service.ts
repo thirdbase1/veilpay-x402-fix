@@ -4,6 +4,7 @@ import type {
   DashboardMetrics,
   PaymentIntentStatus,
 } from './types'
+import { parseDecimalToMicroUnits } from './intent'
 
 /**
  * Client-facing typed service layer for VeilPay invoices.
@@ -104,14 +105,29 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
 
 export async function createPaymentIntentApi(
   conditions: PaymentConditions,
-  _walletId: string | null,
+  walletId: string | null,
 ): Promise<{ intent: PaymentIntent; midnightStatus: 'published' | 'integration_pending' }> {
-  // Phase 1 (v2 kit): invoices are issued by the SERVER gateway stack; the
-  // browser wallet is connect + read-only until Phase 2 browser pay lands.
+  // Phase 1 (v2 kit): the merchant's browser wallet signs createIntent (the
+  // server never holds keys, and the deploy-time gateway is never used at
+  // runtime). We issue on-chain first, then register the verified result.
+  if (!walletId) {
+    throw new Error(
+      'Connect your Midnight wallet to issue the invoice on-chain. Create invoices from the merchant dashboard with the extension unlocked.',
+    )
+  }
+
+  const amountMicro = parseDecimalToMicroUnits(conditions.amount.amount)
+  if (amountMicro === null || amountMicro <= 0n) {
+    throw new Error('Amount must be a positive decimal with at most 6 decimal places.')
+  }
+
+  const { issueInvoice } = await import('@/lib/veilpay/client')
+  const issuance = await issueInvoice(walletId, { amountMicro, ttlOps: 1000 })
+
   const res = await fetch('/api/intents', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ conditions }),
+    body: JSON.stringify({ conditions, issuance }),
     cache: 'no-store',
   })
 

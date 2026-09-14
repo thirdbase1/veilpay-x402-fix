@@ -19,6 +19,7 @@ import type {
 import { createPaymentIntentApi } from '@/lib/payments/service'
 import { midnightPublicConfig } from '@/lib/config'
 import { cn } from '@/lib/utils'
+import { useWallet } from '@/lib/wallet/context'
 
 const inputClass =
   'w-full rounded-md border border-input bg-background/60 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
@@ -30,6 +31,7 @@ function fieldError(issues: { field: string; message: string }[], field: string)
 
 export function IntentBuilder() {
   const router = useRouter()
+  const { walletId } = useWallet()
 
   const [conditions, setConditions] = useState<PaymentConditions>({
     amount: { kind: 'exactly', asset: SUPPORTED_ASSETS[0], amount: '', amountMax: '' },
@@ -108,7 +110,7 @@ export function IntentBuilder() {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      const { intent } = await createPaymentIntentApi(conditions, null)
+      const { intent } = await createPaymentIntentApi(conditions, walletId)
       setCreatedIntent(intent)
       router.refresh()
     } catch (err) {
